@@ -16,7 +16,7 @@
     </body>
     <script type="text/javascript">
      // something like this to read in file:
-     dateparse = d3.utcParse('%Y/%m/%d')
+     dateparse = d3.timeParse('%Y/%m/%d')
      d3.csv("books.csv")
                    .then(function(books) {
                        // how to call:
