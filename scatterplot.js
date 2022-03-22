@@ -1,10 +1,18 @@
-// Copyright 2021 Observable, Inc.
-// Released under the ISC license.
-// https://observablehq.com/@d3/scatterplot
+function offset(X1, X2, padding, current_offset) {
+  const Y = new Array(X1.length).fill(0);
+  for (const bi of d3.range(X1.length).sort((i, j) => X1[i] - X1[j])) {
+    if (X1[bi] > d3.min(current_offset) + padding) {
+      // we want to find the index of the first value in current_offset that X1 is greater than
+      Y[bi] = current_offset.map(v => X1[bi] > v+padding).indexOf(true);
+      current_offset[Y[bi]] = X2[bi];
+    } else {
+      Y[bi] = current_offset.length;
+      current_offset.push(X2[bi]);
+    }
+  }
+  return Y;
+}
 
-// Copyright 2021 Observable, Inc.
-// Released under the ISC license.
-// https://observablehq.com/@d3/scatterplot
 function Scatterplot(data, {
   x1 = ([x]) => x1, // given d in data, returns the (quantitative) x-value
   x2 = ([x]) => x2, // given d in data, returns the (quantitative) x-value
@@ -199,19 +207,4 @@ function Scatterplot(data, {
      .text(i => `${T[i]}\n${X1[i]}\n${X2[i]}`)
 
   return svg.node();
-}
-
-function offset(X1, X2, padding, current_offset) {
-  const Y = new Array(X1.length).fill(0);
-  for (const bi of d3.range(X1.length).sort((i, j) => X1[i] - X1[j])) {
-    if (X1[bi] > d3.min(current_offset)  + padding) {
-      // we want to find the index of the first value in current_offset that X1 is greater than
-      Y[bi] = current_offset.map(v => X1[bi] > v+padding).indexOf(true);
-      current_offset[Y[bi]] = X2[bi];
-    } else {
-      Y[bi] = current_offset.length;
-      current_offset.push(X2[bi]);
-    }
-  }
-  return Y;
 }
