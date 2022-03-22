@@ -1,6 +1,11 @@
-function offset(X1, X2, padding, current_offset) {
+function offset(X1, X2, padding, current_offset, years, current_year) {
   const Y = new Array(X1.length).fill(0);
   for (const bi of d3.range(X1.length).sort((i, j) => X1[i] - X1[j])) {
+    // we don't compute the offset of any dots that were started last year
+    // (they're already included in current_offset)
+    if (years[bi] != current_year) {
+      continue
+    }
     if (X1[bi] > d3.min(current_offset) + padding) {
       // we want to find the index of the first value in current_offset that X1 is greater than
       Y[bi] = current_offset.map(v => X1[bi] > v+padding).indexOf(true);
@@ -131,11 +136,12 @@ function Scatterplot(data, {
     var masked_I = I.filter((v, i) => Y1_mask[i] || Y2_mask[i])
     // get the relevant x position
     var masked_X1 = masked_I.map(i => xScale(X1[i]))
+    var masked_Y1 = masked_I.map(i => Y1[i].getTime())
     // if the end of the book isn't this year, use the end of the year
     var masked_X2 = masked_I.map(i => Y1[i].getTime() == Y2[i].getTime() ? xScale(X2[i]) : xScale(new Date('2015/12/31')))
     var masked_T = masked_I.map(i => T[i])
     // for values that show up in both, we want them to have the same offset value already, which is what last_years_offset is for
-    var tmp = offset(masked_X1, masked_X2, r*2+padding, last_years_offset);
+    var tmp = offset(masked_X1, masked_X2, r*2+padding, last_years_offset, masked_Y1, unique_times[idx]);
     // figure out the indices that correspond to points that either started or ended in a different year
     var masked_I1 = I.filter((v, i) => Y1_mask[i])
     var masked_I2 = I.filter((v, i) => Y2_mask[i])
