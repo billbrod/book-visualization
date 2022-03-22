@@ -1,0 +1,44 @@
+<!doctype html>
+<html class="no-js" lang="">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <title>Books</title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <script src="https://d3js.org/d3.v7.min.js"></script>
+        <script type="text/javascript" src="scatterplot.js"></script>
+        <!-- Place favicon.ico in the root directory -->
+
+    </head>
+    <svg></svg>
+    <body>
+    </body>
+    <script type="text/javascript">
+     // something like this to read in file:
+     dateparse = d3.utcParse('%Y/%m/%d')
+     d3.csv("books.csv")
+                   .then(function(books) {
+                       // how to call:
+                       Scatterplot(books, {
+                           x1: d => d3.timeDay(dateparse(['2015'].concat(d.date_started.split('/').slice(1, 3)).join('/'))),
+                           x2: d => d3.timeDay(dateparse(['2015'].concat(d.date_read.split('/').slice(1, 3)).join('/'))),
+                           y1: d => d3.timeYear(dateparse(d.date_started)),
+                           y2: d => d3.timeYear(dateparse(d.date_read)),
+                           z: d => d.fiction,
+                           title: d => d.title,
+                           xType: d3.scaleTime,
+                           xDomain: [dateparse('2015/01/01'), dateparse('2015/12/31')],
+                           xFormat: d3.timeFormat("%B %-d"),
+                           yType: d3.scaleTime,
+                           yFormat: d3.timeFormat("%Y"),
+                           padding: 5,
+                           r: 3,
+                           width: 928,
+                           height: 1000,
+                       })
+                   });
+
+    </script>
+
+</html>

@@ -2,28 +2,6 @@
 // Released under the ISC license.
 // https://observablehq.com/@d3/scatterplot
 
-// something like this to read in file:
-books = FileAttachment("books@1.csv").csv({parse: true})
-dateparse = d3.utcParse('%Y/%m/%d')
-// how to call:
-Scatterplot(books, {
-  x1: d => d3.timeDay(dateparse(['2015'].concat(d.date_started.split('/').slice(1, 3)).join('/'))),
-  x2: d => d3.timeDay(dateparse(['2015'].concat(d.date_read.split('/').slice(1, 3)).join('/'))),
-  y1: d => d3.timeYear(dateparse(d.date_started)),
-  y2: d => d3.timeYear(dateparse(d.date_read)),
-  z: d => d.fiction,
-  title: d => d.title,
-  xType: d3.scaleTime,
-  xDomain: [dateparse('2015/01/01'), dateparse('2015/12/31')],
-  xFormat: d3.timeFormat("%B %-d"),
-  yType: d3.scaleTime,
-  yFormat: d3.timeFormat("%Y"),
-  padding: 5,
-  r: 3,
-  width,
-  height: 1000,
-})
-
 // Copyright 2021 Observable, Inc.
 // Released under the ISC license.
 // https://observablehq.com/@d3/scatterplot
@@ -90,7 +68,7 @@ function Scatterplot(data, {
   const yAxis = d3.axisLeft(yScale).ticks(d3.timeYear.every(1), yFormat);
   const color = d3.scaleOrdinal(zDomain, colors);
 
-  const svg = d3.create("svg")
+  const svg = d3.select("svg")
       .attr("width", width)
       .attr("height", height)
       .attr("viewBox", [0, 0, width, height])
@@ -148,7 +126,6 @@ function Scatterplot(data, {
     // if the end of the book isn't this year, use the end of the year
     var masked_X2 = masked_I.map(i => Y1[i].getTime() == Y2[i].getTime() ? xScale(X2[i]) : xScale(new Date('2015/12/31')))
     var masked_T = masked_I.map(i => T[i])
-    console.log(masked_T)
     // for values that show up in both, we want them to have the same offset value already, which is what last_years_offset is for
     var tmp = offset(masked_X1, masked_X2, r*2+padding, last_years_offset);
     // figure out the indices that correspond to points that either started or ended in a different year
@@ -226,10 +203,7 @@ function Scatterplot(data, {
 
 function offset(X1, X2, padding, current_offset) {
   const Y = new Array(X1.length).fill(0);
-  console.log(X1, X2, Y)
-  console.log('offset', current_offset)
   for (const bi of d3.range(X1.length).sort((i, j) => X1[i] - X1[j])) {
-    console.log(X1[bi], X2[bi], current_offset, Y, d3.min(current_offset), d3.minIndex(current_offset))
     if (X1[bi] > d3.min(current_offset)  + padding) {
       // we want to find the index of the first value in current_offset that X1 is greater than
       Y[bi] = current_offset.map(v => X1[bi] > v+padding).indexOf(true);
