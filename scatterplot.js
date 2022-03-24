@@ -18,6 +18,16 @@ function offset(X1, X2, padding, current_offset, years, current_year) {
   return Y;
 }
 
+function format_date(d, begin) {
+  dateparse = d3.timeParse('%Y/%m/%d')
+  if (begin === true) {
+    date = d.date_started
+  } else {
+    date = d.date_read
+  }
+  return d3.timeFormat('%b %-d, %Y')(dateparse(date))
+}
+
 function Scatterplot(data, {
   x1 = ([x]) => x1, // given d in data, returns the (quantitative) x-value
   x2 = ([x]) => x2, // given d in data, returns the (quantitative) x-value
@@ -86,6 +96,20 @@ function Scatterplot(data, {
       .attr("height", height)
       .attr("viewBox", [0, 0, width, height])
       .attr("style", "max-width: 100%; height: auto; height: intrinsic;");
+
+  function update_tooltip(d, x, y) {
+    tooltip.attr('display', null)
+    tooltip.attr('transform', `translate(${x},${y})`)
+    var title = d3.select('#title').text(d.title)
+    d3.select('#author').text("by " + d.author)
+    d3.select('#date_started').text("Started: " + format_date(d, true));
+    d3.select('#date_read').text("Finished: " + format_date(d, false));
+    console.log(title.style('width'))
+    console.log(title.node().style.width)
+    console.log(title.node().getBBox())
+    d3.select('rect').attr('width', title.node().getBBox().width)
+    d3.select('rect').attr('x', title.node().getBBox().x)
+  };
 
   svg.append("g")
       .attr("transform", `translate(0,${height - marginBottom})`)
@@ -182,6 +206,8 @@ function Scatterplot(data, {
       .attr("x2", i => Y1[i].getTime() == Y2[i].getTime() ? xScale(X2[i]) : xScale(new Date('2015/12/31')))
       .attr("y1", i => yScale(Y1[i]) + Y_dodge[i])
       .attr("y2", i => yScale(Y1[i]) + Y_dodge[i])
+      .on("mouseover", (event, i) => update_tooltip(data[i], xScale(X1[i]), yScale(Y1[i]) + Y_dodge[i]))
+      .on("mouseout", () => tooltip.attr('display', 'none'))
     .clone()
       // draw lines that start at the beginning of the year
       .attr("x1", i => xScale(new Date('2015/01/01')))
@@ -190,6 +216,9 @@ function Scatterplot(data, {
       .attr('stroke-opacity', i => Y1[i].getTime() == Y2[i].getTime() ? 0 : 1)
       .attr("y1", i => yScale(Y2[i]) + Y_dodge[i])
       .attr("y2", i => yScale(Y2[i]) + Y_dodge[i])
+      .on("mouseover", (event, i) => update_tooltip(data[i], xScale(X1[i]), yScale(Y1[i]) + Y_dodge[i]))
+      .on("mouseout", () => tooltip.attr('display', 'none'))
+
 
 
   const start_dots = g.selectAll("start_circle")
@@ -198,7 +227,9 @@ function Scatterplot(data, {
       .attr("cx", i => xScale(X1[i]))
       .attr("cy", i => yScale(Y1[i]) + Y_dodge[i])
       .attr('fill', i => color(Z[i]))
-      .attr("r", r);
+      .attr("r", r)
+      .on("mouseover", (event, i) => update_tooltip(data[i], xScale(X1[i]), yScale(Y1[i]) + Y_dodge[i]))
+      .on("mouseout", () => tooltip.attr('display', 'none'))
 
   const end_dots = g.selectAll("end_circle")
     .data(I)
@@ -206,11 +237,35 @@ function Scatterplot(data, {
       .attr("cx", i => xScale(X2[i]))
       .attr("cy", i => yScale(Y2[i]) + Y_dodge[i])
       .attr('fill', i => color(Z[i]))
-      .attr("r", r);
-  start_dots.append('title')
-     .text(i => `${T[i]}\n${X1[i]}\n${X2[i]}`)
-  end_dots.append('title')
-     .text(i => `${T[i]}\n${X1[i]}\n${X2[i]}`)
+      .attr("r", r)
+      .on("mouseover", (event, i) => update_tooltip(data[i], xScale(X1[i]), yScale(Y1[i]) + Y_dodge[i]))
+      .on("mouseout", () => tooltip.attr('display', 'none'))
+
+  var tooltip = svg.append('g')
+                   .attr('class', 'tooltip')
+                   .attr('display', 'none')
+                   .attr('pointer-events', 'none')
+                   .attr('font-family', 'sans-serif')
+                   .attr('font-size', '10')
+                   .attr('text-anchor', 'middle')
+
+  tooltip.append('rect')
+         .style('fill', 'white')
+         .attr('y', '-60')
+         .attr('height', '55')
+  tooltip.append('text')
+         .attr('id', 'title')
+         .attr('y', '-48')
+         .attr('background-color', 'white')
+  tooltip.append('text')
+         .attr('id', 'author')
+         .attr('y', '-36')
+  tooltip.append('text')
+         .attr('id', 'date_started')
+         .attr('y', '-24')
+  tooltip.append('text')
+         .attr('id', 'date_read')
+         .attr('y', '-12')
 
   return svg.node();
 }
