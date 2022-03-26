@@ -35,7 +35,6 @@ function Scatterplot(data, {
   y2 = ([, y]) => y2, // given d in data, returns the (quantitative) y-value
   z = ([z]) => z,
   r = 3, // (fixed) radius of dots, in pixels
-  title, // given d in data, returns the title
   marginTop = 20, // top margin, in pixels
   marginRight = 30, // right margin, in pixels
   marginBottom = 30, // bottom margin, in pixels
@@ -46,25 +45,13 @@ function Scatterplot(data, {
   insetBottom = inset*20, // inset the default y-range, needs to be larger because of how we offset
   insetLeft = inset, // inset the default x-range
   width = 640, // outer width, in pixels
-  height = 400, // outer height, in pixels
   xType = d3.scaleLinear, // type of x-scale
-  xDomain, // [xmin, xmax]
   xRange = [marginLeft + insetLeft, width - marginRight - insetRight], // [left, right]
   yType = d3.scaleLinear, // type of y-scale
-  yDomain, // [ymin, ymax]
-  yRange = [height - marginBottom - insetBottom, marginTop + insetTop], // [bottom, top]
-  xLabel, // a label for the x-axis
-  yLabel, // a label for the y-axis
   xFormat, // a format specifier string for the x-axis
   yFormat, // a format specifier string for the y-axis
-  zDomain, // array of z-values
   colors, // color scheme
-  fill = "none", // fill color for dots
-  stroke = "currentColor", // stroke color for the dots
-  strokeWidth = 1.5, // stroke width for dots
   padding = 1.5, // (fixed) padding between the circles
-  halo = "#fff", // color of label halo
-  haloWidth = 3 // padding around the labels
 } = {}) {
   // Compute values.
   const X1 = d3.map(data, x1);
@@ -72,14 +59,19 @@ function Scatterplot(data, {
   const Y1 = d3.map(data, y1);
   const Y2 = d3.map(data, y2);
   const Z = d3.map(data, z);
-  const T = title == null ? null : d3.map(data, title);
   const authors = d3.map(data, d => d.author);
   const I = d3.range(X1.length).filter(i => !isNaN(X1[i]) && !isNaN(Y1[i]));
   // Compute default domains.
-  if (xDomain === undefined) xDomain = d3.extent(X1);
-  if (yDomain === undefined) yDomain = d3.extent(Y1);
-  if (zDomain === undefined) zDomain = Z;
+  var xDomain = d3.extent(X1);
+  var yDomain = d3.extent(Y1);
+  var zDomain = Z;
   zDomain = new d3.InternSet(zDomain);
+
+  // compute height based on number of years
+  var unique_times = [...new Set(Y1.map(d => d.getTime()))]
+  height = new Set([...unique_times, ...new Set(Y2.map(d => d.getTime()))])
+  height = 25 + 140 * height.size
+  var yRange = [height - marginBottom - insetBottom, marginTop + insetTop]
 
   // Chose a default color scheme based on cardinality.
   if (colors === undefined) colors = d3.schemeSpectral[zDomain.size];
@@ -141,12 +133,6 @@ function Scatterplot(data, {
       .call(g => g.selectAll(".tick line").clone()
           .attr("y2", marginTop + marginBottom - height)
           .attr("stroke-opacity", 0.1))
-      .call(g => g.append("text")
-          .attr("x", width)
-          .attr("y", marginBottom - 4)
-          .attr("fill", "currentColor")
-          .attr("text-anchor", "end")
-          .text(xLabel));
 
   svg.append("g")
       .attr("transform", `translate(${marginLeft},0)`)
@@ -162,17 +148,10 @@ function Scatterplot(data, {
           .attr("y1", -padding*2)
           .attr("x2", width - marginLeft - marginRight)
           .attr("stroke-opacity", 0.4))
-      .call(g => g.append("text")
-          .attr("x", -marginLeft)
-          .attr("y", 10)
-          .attr("fill", "currentColor")
-          .attr("text-anchor", "start")
-          .text(yLabel));
 
   const g = svg.append("g")
 
   // Compute the y offsets.
-  var unique_times = [...new Set(Y1.map(d => d.getTime()))]
   var Y_dodge = []
   var last_years_offset = []
   // do this separately for each year
@@ -186,7 +165,6 @@ function Scatterplot(data, {
     var masked_Y1 = masked_I.map(i => Y1[i].getTime())
     // if the end of the book isn't this year, use the end of the year
     var masked_X2 = masked_I.map(i => Y1[i].getTime() == Y2[i].getTime() ? xScale(X2[i]) : xScale(new Date('2015/12/31')))
-    var masked_T = masked_I.map(i => T[i])
     // for values that show up in both, we want them to have the same offset value already, which is what last_years_offset is for
     var tmp = offset(masked_X1, masked_X2, r*2+padding, last_years_offset, masked_Y1, unique_times[idx]);
     // figure out the indices that correspond to points that either started or ended in a different year
