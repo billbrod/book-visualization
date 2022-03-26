@@ -73,6 +73,7 @@ function Scatterplot(data, {
   const Y2 = d3.map(data, y2);
   const Z = d3.map(data, z);
   const T = title == null ? null : d3.map(data, title);
+  const authors = d3.map(data, d => d.author);
   const I = d3.range(X1.length).filter(i => !isNaN(X1[i]) && !isNaN(Y1[i]));
   // Compute default domains.
   if (xDomain === undefined) xDomain = d3.extent(X1);
@@ -115,7 +116,23 @@ function Scatterplot(data, {
     }
     d3.select('rect').attr('width', d3.max(elements.map(elt => elt.node().getBBox().width))+padding)
     d3.select('rect').attr('x', d3.min(elements.map(elt => elt.node().getBBox().x))-padding/2)
+    d3.selectAll('circle')
+      .attr('fill-opacity', i => authors[i] == d.author ? 1 : .2)
+    d3.selectAll('.connect')
+      .attr('stroke-opacity', i => authors[i] == d.author ? 1 : .2)
+    d3.selectAll('.year-start')
+      .attr('stroke-opacity', i => Y1[i].getTime() == Y2[i].getTime() ?  0 : authors[i] == d.author ? 1 : .2)
   };
+
+  function hide_tooltip() {
+    tooltip.attr('display', 'none')
+    d3.selectAll('circle')
+      .attr('fill-opacity', 1)
+    d3.selectAll('.connect')
+      .attr('stroke-opacity', 1)
+    d3.selectAll('.year-start')
+      .attr('stroke-opacity', i => Y1[i].getTime() == Y2[i].getTime() ? 0 : 1)
+  }
 
   svg.append("g")
       .attr("transform", `translate(0,${height - marginBottom})`)
@@ -215,6 +232,7 @@ function Scatterplot(data, {
       .attr("y1", i => yScale(Y2[i]) + Y_dodge[i])
       .attr("y2", i => yScale(Y2[i]) + Y_dodge[i])
       .attr("stroke", i => color(Z[i]))
+      .attr('id', i => authors[i])
     .clone()
       .attr("class", 'connect')
       .attr("stroke-opacity", 1)
@@ -228,19 +246,21 @@ function Scatterplot(data, {
   // put the events on
   g.selectAll('.year-start')
     .clone()
+      .attr('class', 'translucent')
       .attr('stroke-width', r*2)
       .attr('stroke-opacity', 0)
       // only have the events active for those books that started in a different year (i.e. those whose .year-start line is visible)
       .on("mouseover", (event, i) => Y1[i].getTime() == Y2[i].getTime() ? null : update_tooltip(data[i], xScale(X1[i]), yScale(Y1[i]) + Y_dodge[i]))
-      .on("mouseout", () => tooltip.attr('display', 'none'))
+      .on("mouseout", () => hide_tooltip())
   g.selectAll('.connect')
     .clone()
+      .attr('class', 'translucent')
       .attr('stroke-width', r*2)
       .attr('stroke-opacity', 0)
       .on("mouseover", (event, i) => update_tooltip(data[i], xScale(X1[i]), yScale(Y1[i]) + Y_dodge[i]))
-      .on("mouseout", () => tooltip.attr('display', 'none'))
+      .on("mouseout", () => hide_tooltip())
 
-  const start_dots = g.selectAll("start_circle")
+  g.selectAll("circle")
     .data(I)
     .join("circle")
       .attr("cx", i => xScale(X1[i]))
@@ -248,17 +268,10 @@ function Scatterplot(data, {
       .attr('fill', i => color(Z[i]))
       .attr("r", r)
       .on("mouseover", (event, i) => update_tooltip(data[i], xScale(X1[i]), yScale(Y1[i]) + Y_dodge[i]))
-      .on("mouseout", () => tooltip.attr('display', 'none'))
-
-  const end_dots = g.selectAll("end_circle")
-    .data(I)
-    .join("circle")
+      .on("mouseout", () => hide_tooltip())
+    .clone()
       .attr("cx", i => xScale(X2[i]))
       .attr("cy", i => yScale(Y2[i]) + Y_dodge[i])
-      .attr('fill', i => color(Z[i]))
-      .attr("r", r)
-      .on("mouseover", (event, i) => update_tooltip(data[i], xScale(X1[i]), yScale(Y1[i]) + Y_dodge[i]))
-      .on("mouseout", () => tooltip.attr('display', 'none'))
 
   var tooltip = svg.append('g')
                    .attr('class', 'tooltip')

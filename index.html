@@ -15,11 +15,10 @@
     <body>
     </body>
     <script type="text/javascript">
-     // something like this to read in file:
      dateparse = d3.timeParse('%Y/%m/%d')
+     // figure out how to compute width automatically.
      d3.csv("books.csv")
                    .then(function(books) {
-                       // how to call:
                        Scatterplot(books, {
                            x1: d => d3.timeDay(dateparse(['2015'].concat(d.date_started.split('/').slice(1, 3)).join('/'))),
                            x2: d => d3.timeDay(dateparse(['2015'].concat(d.date_read.split('/').slice(1, 3)).join('/'))),
