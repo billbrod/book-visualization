@@ -100,15 +100,21 @@ function Scatterplot(data, {
   function update_tooltip(d, x, y) {
     tooltip.attr('display', null)
     tooltip.attr('transform', `translate(${x},${y})`)
-    var title = d3.select('#title').text(d.title)
-    d3.select('#author').text("by " + d.author)
-    d3.select('#date_started').text("Started: " + format_date(d, true));
-    d3.select('#date_read').text("Finished: " + format_date(d, false));
-    console.log(title.style('width'))
-    console.log(title.node().style.width)
-    console.log(title.node().getBBox())
-    d3.select('rect').attr('width', title.node().getBBox().width)
-    d3.select('rect').attr('x', title.node().getBBox().x)
+    padding = 10
+    elements = []
+    elements.push(d3.select('#title').text(d.title))
+    elements.push(d3.select('#author').text("by " + d.author))
+    elements.push(d3.select('#date_started').text("Started: " + format_date(d, true)));
+    elements.push(d3.select('#date_read').text("Finished: " + format_date(d, false)));
+    if (x - d3.select('rect').attr('width')/2 < 0) {
+      d3.select('.tooltip').attr('text-anchor', 'start')
+    } else if (x + d3.select('rect').attr('width')/2 > svg.attr('width')) {
+      d3.select('.tooltip').attr('text-anchor', 'end')
+    } else {
+       d3.select('.tooltip').attr('text-anchor', 'middle')
+    }
+    d3.select('rect').attr('width', d3.max(elements.map(elt => elt.node().getBBox().width))+padding)
+    d3.select('rect').attr('x', d3.min(elements.map(elt => elt.node().getBBox().x))-padding/2)
   };
 
   svg.append("g")
@@ -253,6 +259,7 @@ function Scatterplot(data, {
          .style('fill', 'white')
          .attr('y', '-60')
          .attr('height', '55')
+         .style('stroke', 'black')
   tooltip.append('text')
          .attr('id', 'title')
          .attr('y', '-48')
