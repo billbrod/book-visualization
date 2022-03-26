@@ -206,15 +206,7 @@ function Scatterplot(data, {
   g.selectAll("line")
     .data(I)
     .join('line')
-      .attr("stroke", i => color(Z[i]))
-      .attr("x1", i => xScale(X1[i]))
-      // if a book ended in a different year, have its line run to the end of the year
-      .attr("x2", i => Y1[i].getTime() == Y2[i].getTime() ? xScale(X2[i]) : xScale(new Date('2015/12/31')))
-      .attr("y1", i => yScale(Y1[i]) + Y_dodge[i])
-      .attr("y2", i => yScale(Y1[i]) + Y_dodge[i])
-      .on("mouseover", (event, i) => update_tooltip(data[i], xScale(X1[i]), yScale(Y1[i]) + Y_dodge[i]))
-      .on("mouseout", () => tooltip.attr('display', 'none'))
-    .clone()
+      .attr('class', 'year-start')
       // draw lines that start at the beginning of the year
       .attr("x1", i => xScale(new Date('2015/01/01')))
       .attr("x2", i => xScale(X2[i]))
@@ -222,10 +214,31 @@ function Scatterplot(data, {
       .attr('stroke-opacity', i => Y1[i].getTime() == Y2[i].getTime() ? 0 : 1)
       .attr("y1", i => yScale(Y2[i]) + Y_dodge[i])
       .attr("y2", i => yScale(Y2[i]) + Y_dodge[i])
+      .attr("stroke", i => color(Z[i]))
+    .clone()
+      .attr("class", 'connect')
+      .attr("stroke-opacity", 1)
+      .attr("x1", i => xScale(X1[i]))
+      // if a book ended in a different year, have its line run to the end of the year
+      .attr("x2", i => Y1[i].getTime() == Y2[i].getTime() ? xScale(X2[i]) : xScale(new Date('2015/12/31')))
+      .attr("y1", i => yScale(Y1[i]) + Y_dodge[i])
+      .attr("y2", i => yScale(Y1[i]) + Y_dodge[i])
+
+  // create translucent lines that lie on top of the visible ones, which we'll
+  // put the events on
+  g.selectAll('.year-start')
+    .clone()
+      .attr('stroke-width', r*2)
+      .attr('stroke-opacity', 0)
+      // only have the events active for those books that started in a different year (i.e. those whose .year-start line is visible)
+      .on("mouseover", (event, i) => Y1[i].getTime() == Y2[i].getTime() ? null : update_tooltip(data[i], xScale(X1[i]), yScale(Y1[i]) + Y_dodge[i]))
+      .on("mouseout", () => tooltip.attr('display', 'none'))
+  g.selectAll('.connect')
+    .clone()
+      .attr('stroke-width', r*2)
+      .attr('stroke-opacity', 0)
       .on("mouseover", (event, i) => update_tooltip(data[i], xScale(X1[i]), yScale(Y1[i]) + Y_dodge[i]))
       .on("mouseout", () => tooltip.attr('display', 'none'))
-
-
 
   const start_dots = g.selectAll("start_circle")
     .data(I)
