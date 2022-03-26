@@ -272,6 +272,8 @@ function Scatterplot(data, {
     .clone()
       .attr("cx", i => xScale(X2[i]))
       .attr("cy", i => yScale(Y2[i]) + Y_dodge[i])
+      .on("mouseover", (event, i) => update_tooltip(data[i], xScale(X1[i]), yScale(Y1[i]) + Y_dodge[i]))
+      .on("mouseout", () => hide_tooltip())
 
   var tooltip = svg.append('g')
                    .attr('class', 'tooltip')
