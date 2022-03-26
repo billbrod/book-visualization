@@ -211,6 +211,9 @@ function Scatterplot(data, {
       .attr("y2", i => yScale(Y2[i]) + Y_dodge[i])
       .attr("stroke", i => color(Z[i]))
       .attr('id', i => authors[i])
+      .attr('stroke-width', r*2)
+      .on("mouseover", (event, i) => Y1[i].getTime() == Y2[i].getTime() ? null : update_tooltip(data[i], xScale(X1[i]), yScale(Y1[i]) + Y_dodge[i]))
+      .on("mouseout", () => hide_tooltip())
     .clone()
       .attr("class", 'connect')
       .attr("stroke-opacity", 1)
@@ -219,22 +222,6 @@ function Scatterplot(data, {
       .attr("x2", i => Y1[i].getTime() == Y2[i].getTime() ? xScale(X2[i]) : xScale(new Date('2015/12/31')))
       .attr("y1", i => yScale(Y1[i]) + Y_dodge[i])
       .attr("y2", i => yScale(Y1[i]) + Y_dodge[i])
-
-  // create translucent lines that lie on top of the visible ones, which we'll
-  // put the events on
-  g.selectAll('.year-start')
-    .clone()
-      .attr('class', 'translucent')
-      .attr('stroke-width', r*2)
-      .attr('stroke-opacity', 0)
-      // only have the events active for those books that started in a different year (i.e. those whose .year-start line is visible)
-      .on("mouseover", (event, i) => Y1[i].getTime() == Y2[i].getTime() ? null : update_tooltip(data[i], xScale(X1[i]), yScale(Y1[i]) + Y_dodge[i]))
-      .on("mouseout", () => hide_tooltip())
-  g.selectAll('.connect')
-    .clone()
-      .attr('class', 'translucent')
-      .attr('stroke-width', r*2)
-      .attr('stroke-opacity', 0)
       .on("mouseover", (event, i) => update_tooltip(data[i], xScale(X1[i]), yScale(Y1[i]) + Y_dodge[i]))
       .on("mouseout", () => hide_tooltip())
 

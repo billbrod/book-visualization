@@ -16,7 +16,6 @@
     </body>
     <script type="text/javascript">
      dateparse = d3.timeParse('%Y/%m/%d')
-     // figure out how to compute width automatically.
      d3.csv("books.csv")
                    .then(function(books) {
                        Scatterplot(books, {
