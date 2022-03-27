@@ -37,16 +37,12 @@ function Scatterplot(data, {
   r = 3, // (fixed) radius of dots, in pixels
   marginTop = 20, // top margin, in pixels
   marginRight = 30, // right margin, in pixels
-  marginBottom = 30, // bottom margin, in pixels
+  marginBottom = 25, // bottom margin, in pixels
   marginLeft = 40, // left margin, in pixels
-  inset = r * 2, // inset the default range, in pixels
-  insetTop = inset, // inset the default y-range
-  insetRight = inset, // inset the default x-range
-  insetBottom = inset*20, // inset the default y-range, needs to be larger because of how we offset
-  insetLeft = inset, // inset the default x-range
   width = 640, // outer width, in pixels
+  height_per_year = 140,
   xType = d3.scaleLinear, // type of x-scale
-  xRange = [marginLeft + insetLeft, width - marginRight - insetRight], // [left, right]
+  xRange = [marginLeft + marginLeft, width - marginRight - marginRight], // [left, right]
   yType = d3.scaleLinear, // type of y-scale
   xFormat, // a format specifier string for the x-axis
   yFormat, // a format specifier string for the y-axis
@@ -70,8 +66,8 @@ function Scatterplot(data, {
   // compute height based on number of years
   var unique_times = [...new Set(Y1.map(d => d.getTime()))]
   height = new Set([...unique_times, ...new Set(Y2.map(d => d.getTime()))])
-  height = 25 + 140 * height.size
-  var yRange = [height - marginBottom - insetBottom, marginTop + insetTop]
+  height = marginBottom + height_per_year * height.size + marginTop
+  var yRange = [height - marginBottom - height_per_year, marginTop]
 
   // Chose a default color scheme based on cardinality.
   if (colors === undefined) colors = d3.schemeSpectral[zDomain.size];
@@ -84,7 +80,7 @@ function Scatterplot(data, {
   const yAxis = d3.axisLeft(yScale).ticks(d3.timeYear.every(1), yFormat);
   const color = d3.scaleOrdinal(zDomain, colors);
 
-  const svg = d3.select("svg")
+  const svg = d3.select("#scatter")
       .attr("width", width)
       .attr("height", height)
       .attr("viewBox", [0, 0, width, height])
@@ -93,7 +89,7 @@ function Scatterplot(data, {
   function update_tooltip(d, x, y) {
     tooltip.attr('display', null)
     tooltip.attr('transform', `translate(${x},${y})`)
-    padding = 10
+    tt_padding = 10
     elements = []
     elements.push(d3.select('#title').text(d.title))
     elements.push(d3.select('#author').text("by " + d.author))
@@ -106,8 +102,8 @@ function Scatterplot(data, {
     } else {
        d3.select('.tooltip').attr('text-anchor', 'middle')
     }
-    d3.select('rect').attr('width', d3.max(elements.map(elt => elt.node().getBBox().width))+padding)
-    d3.select('rect').attr('x', d3.min(elements.map(elt => elt.node().getBBox().x))-padding/2)
+    d3.select('rect').attr('width', d3.max(elements.map(elt => elt.node().getBBox().width))+tt_padding)
+    d3.select('rect').attr('x', d3.min(elements.map(elt => elt.node().getBBox().x))-tt_padding/2)
     d3.selectAll('circle')
       .attr('fill-opacity', i => authors[i] == d.author ? 1 : .2)
     d3.selectAll('.connect')
