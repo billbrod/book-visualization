@@ -148,10 +148,10 @@ function Scatterplot(data, {
   const g = svg.append("g")
 
   // Compute the y offsets.
-  var Y_dodge = []
+  var Y_dodge = new Array(Y1.length).fill(0);
   var last_years_offset = []
   // do this separately for each year
-  for (var idx = unique_times.length-1; idx >= 0; idx--) {
+  for (var idx = 0; idx < unique_times.length; idx++) {
     // get all books that have either their start or end in this year
     var Y1_mask = Y1.map(d => d.getTime() == unique_times[idx])
     var Y2_mask = Y2.map(d => d.getTime() == unique_times[idx])
@@ -184,15 +184,16 @@ function Scatterplot(data, {
       }
     }
     last_years_offset = last_yrs_tmp;
-    // grab only those values from tmp whose start date are in this year
-    tmp = tmp.filter((v, i) => I1_check.includes(i))
-    // and multiply the offset by the apprioriate value
-    Y_dodge.push(tmp.map(y => (r*2+padding)*y));
+    // multiply the offset by the apprioriate value
+    tmp = tmp.map(y => (r*2+padding)*y);
+    for (tmp_idx of d3.range(tmp.length)) {
+      // grab only those values from tmp whose start date are in this year
+      if (!I1_check.includes(tmp_idx)) {
+        continue
+      }
+      Y_dodge[masked_I[tmp_idx]] = tmp[tmp_idx]
+    }
   }
-  // Y_dodge is an array of arrays, in backwards order, so let's reverse it...
-  Y_dodge.reverse()
-  // and flatten them out
-  Y_dodge = Y_dodge.flat()
 
   g.selectAll("line")
     .data(I)
