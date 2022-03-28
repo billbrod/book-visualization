@@ -109,7 +109,7 @@ function Scatterplot(data, {
     d3.selectAll('.connect')
       .attr('stroke-opacity', i => authors[i] == d.author ? 1 : .2)
     d3.selectAll('.year-start')
-      .attr('stroke-opacity', i => Y1[i].getTime() == Y2[i].getTime() ?  0 : authors[i] == d.author ? 1 : .2)
+      .attr('stroke-opacity', i => authors[i] == d.author ? 1 : .2)
   };
 
   function hide_tooltip() {
@@ -119,7 +119,7 @@ function Scatterplot(data, {
     d3.selectAll('.connect')
       .attr('stroke-opacity', 1)
     d3.selectAll('.year-start')
-      .attr('stroke-opacity', i => Y1[i].getTime() == Y2[i].getTime() ? 0 : 1)
+      .attr('stroke-opacity', 1)
   }
 
   svg.append("g")
@@ -203,17 +203,17 @@ function Scatterplot(data, {
       .attr("x1", i => xScale(new Date('2015/01/01')))
       .attr("x2", i => xScale(X2[i]))
       // and make them only visible for those books that started in a different year
-      .attr('stroke-opacity', i => Y1[i].getTime() == Y2[i].getTime() ? 0 : 1)
+      .attr('display', i => Y1[i].getTime() == Y2[i].getTime() ? 'none' : null)
       .attr("y1", i => yScale(Y2[i]) + Y_dodge[i])
       .attr("y2", i => yScale(Y2[i]) + Y_dodge[i])
       .attr("stroke", i => color(Z[i]))
       .attr('id', i => authors[i])
       .attr('stroke-width', r*2)
-      .on("mouseover", (event, i) => Y1[i].getTime() == Y2[i].getTime() ? null : update_tooltip(data[i], xScale(X1[i]), yScale(Y1[i]) + Y_dodge[i]))
+      .on("mouseover", (event, i) => update_tooltip(data[i], xScale(X1[i]), yScale(Y1[i]) + Y_dodge[i]))
       .on("mouseout", () => hide_tooltip())
     .clone()
       .attr("class", 'connect')
-      .attr("stroke-opacity", 1)
+      .attr('display', null)
       .attr("x1", i => xScale(X1[i]))
       // if a book ended in a different year, have its line run to the end of the year
       .attr("x2", i => Y1[i].getTime() == Y2[i].getTime() ? xScale(X2[i]) : xScale(new Date('2015/12/31')))

@@ -39,6 +39,8 @@
                            width: 928,
                        })
                        GroupedBarChart(PivotBooks(books), {
+                           point_value_data: d3.map(books, d => d.fiction),
+                           point_year_data: d3.map(books, d => d3.timeYear(dateparse(d.date_started))),
                            width: 200,
                            scatterplot_padding: 5,
                            yLabel: 'Number of books read',

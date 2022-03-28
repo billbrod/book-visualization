@@ -17,6 +17,8 @@ function PivotBooks(data) {
 }
 
 function GroupedBarChart(data, {
+    point_value_data = [], // data connecting the values for the points
+    point_year_data = [], // data containing the years for the points
     marginTop = 20, // top margin, in pixels
     marginRight = 0, // right margin, in pixels
     marginBottom = 25, // bottom margin, in pixels
@@ -131,15 +133,24 @@ function GroupedBarChart(data, {
         d3.select('#tooltip-rect-bar').attr('x', d3.min(elements.map(elt => elt.node().getBBox().x))-tt_padding/2)
         d3.selectAll('.bar')
           .attr('fill-opacity', (i, j) => (grouped_data[Math.floor(j/2)][0].getTime() == d[0].getTime() && grouped_data[Math.floor(j/2)][1][i][1]) == d[1] ? 1 : .2)
+        d3.selectAll('circle')
+          .attr('fill-opacity', i => point_value_data[i] == d[1] && point_year_data[i].getTime() == d[0].getTime() ? 1 : .2)
+        d3.selectAll('.connect')
+          .attr('stroke-opacity', i => point_value_data[i] == d[1] && point_year_data[i].getTime() == d[0].getTime() ? 1 : .2)
+        d3.selectAll('.year-start')
+          .attr('stroke-opacity', i => point_value_data[i] == d[1] && point_year_data[i].getTime() == d[0].getTime() ? 1 : .2)
     };
-    console.log(grouped_data)
 
     function hide_tooltip() {
         tooltip.attr('display', 'none')
         d3.selectAll('.bar')
           .attr('fill-opacity', 1)
-        // d3.selectAll('.connect')
-        //   .attr('stroke-opacity', 1)
+        d3.selectAll('circle')
+          .attr('fill-opacity', 1)
+        d3.selectAll('.connect')
+          .attr('stroke-opacity', 1)
+    d3.selectAll('.year-start')
+      .attr('stroke-opacity', 1)
     }
 
     var tooltip = svg.append('g')
