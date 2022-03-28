@@ -95,15 +95,15 @@ function Scatterplot(data, {
     elements.push(d3.select('#author').text("by " + d.author))
     elements.push(d3.select('#date_started').text("Started: " + format_date(d, true)));
     elements.push(d3.select('#date_read').text("Finished: " + format_date(d, false)));
-    if (x - d3.select('rect').attr('width')/2 < 0) {
-      d3.select('.tooltip').attr('text-anchor', 'start')
-    } else if (x + d3.select('rect').attr('width')/2 > svg.attr('width')) {
-      d3.select('.tooltip').attr('text-anchor', 'end')
+    if (x - d3.select('#tooltip-rect-scatter').attr('width')/2 < 0) {
+      d3.select('.tooltip-scatter').attr('text-anchor', 'start')
+    } else if (x + d3.select('#tooltip-rect-scatter').attr('width')/2 > svg.attr('width')) {
+      d3.select('.tooltip-scatter').attr('text-anchor', 'end')
     } else {
-       d3.select('.tooltip').attr('text-anchor', 'middle')
+       d3.select('.tooltip-scatter').attr('text-anchor', 'middle')
     }
-    d3.select('rect').attr('width', d3.max(elements.map(elt => elt.node().getBBox().width))+tt_padding)
-    d3.select('rect').attr('x', d3.min(elements.map(elt => elt.node().getBBox().x))-tt_padding/2)
+    d3.select('#tooltip-rect-scatter').attr('width', d3.max(elements.map(elt => elt.node().getBBox().width))+tt_padding)
+    d3.select('#tooltip-rect-scatter').attr('x', d3.min(elements.map(elt => elt.node().getBBox().x))-tt_padding/2)
     d3.selectAll('circle')
       .attr('fill-opacity', i => authors[i] == d.author ? 1 : .2)
     d3.selectAll('.connect')
@@ -238,7 +238,7 @@ function Scatterplot(data, {
       .on("mouseout", () => hide_tooltip())
 
   var tooltip = svg.append('g')
-                   .attr('class', 'tooltip')
+                   .attr('class', 'tooltip-scatter')
                    .attr('display', 'none')
                    .attr('pointer-events', 'none')
                    .attr('font-family', 'sans-serif')
@@ -246,6 +246,7 @@ function Scatterplot(data, {
                    .attr('text-anchor', 'middle')
 
   tooltip.append('rect')
+         .attr('id', 'tooltip-rect-scatter')
          .style('fill', 'white')
          .attr('y', '-60')
          .attr('height', '55')
@@ -253,7 +254,6 @@ function Scatterplot(data, {
   tooltip.append('text')
          .attr('id', 'title')
          .attr('y', '-48')
-         .attr('background-color', 'white')
   tooltip.append('text')
          .attr('id', 'author')
          .attr('y', '-36')

@@ -72,7 +72,6 @@ function GroupedBarChart(data, {
 
     // want to make sure svg element is wide enough for the title
     full_width = d3.max([width + marginLeft + marginRight, textSize(yLabel).width]);
-    console.log(width, full_width)
     const svg = d3.select("#bar")
                   .attr("width", full_width)
                   .attr("height", height)
@@ -109,12 +108,60 @@ function GroupedBarChart(data, {
         d3.select(this).selectAll('rect')
           .data(I.filter(i => !isNaN(Y[row_j][i])))
           .join('rect')
+            .attr('class', 'bar')
             .attr("x", i => xzScales[row_j](Z[row_j][i]))
             .attr("y", i => yScales[row_j](Y[row_j][i]))
             .attr("width", xzScales[row_j].bandwidth())
             .attr("height", i => yScales[row_j](0) - yScales[row_j](Y[row_j][i]))
             .attr("fill", i => zScale(Z[row_j][i]))
+            .on("mouseover", (event, i) => update_tooltip(grouped_data[row_j][1][i],
+                                                          xzScales[row_j](Z[row_j][i]),
+                                                          row_j * height_per_year + marginTop - scatterplot_padding + yScales[row_j](Y[row_j][i])))
+            .on("mouseout", () => hide_tooltip())
     })
+
+    function update_tooltip(d, x, y) {
+        tooltip.attr('display', null)
+        tooltip.attr('transform', `translate(${x},${y})`)
+        tt_padding = 10
+        elements = []
+        elements.push(d3.select('#type').text(d[1]))
+        elements.push(d3.select('#value').text(d[2]))
+        d3.select('#tooltip-rect-bar').attr('width', d3.max(elements.map(elt => elt.node().getBBox().width))+tt_padding)
+        d3.select('#tooltip-rect-bar').attr('x', d3.min(elements.map(elt => elt.node().getBBox().x))-tt_padding/2)
+        d3.selectAll('.bar')
+          .attr('fill-opacity', (i, j) => (grouped_data[Math.floor(j/2)][0].getTime() == d[0].getTime() && grouped_data[Math.floor(j/2)][1][i][1]) == d[1] ? 1 : .2)
+    };
+    console.log(grouped_data)
+
+    function hide_tooltip() {
+        tooltip.attr('display', 'none')
+        d3.selectAll('.bar')
+          .attr('fill-opacity', 1)
+        // d3.selectAll('.connect')
+        //   .attr('stroke-opacity', 1)
+    }
+
+    var tooltip = svg.append('g')
+                     .attr('class', 'tooltip-bar')
+                     .attr('display', 'none')
+                     .attr('pointer-events', 'none')
+                     .attr('font-family', 'sans-serif')
+                     .attr('font-size', '10')
+                     .attr('text-anchor', 'start')
+
+    tooltip.append('rect')
+           .attr('id', 'tooltip-rect-bar')
+           .style('fill', 'white')
+           .attr('y', '-40')
+           .attr('height', '35')
+           .style('stroke', 'black')
+    tooltip.append('text')
+           .attr('id', 'type')
+           .attr('y', '-24')
+    tooltip.append('text')
+           .attr('id', 'value')
+           .attr('y', '-12')
 
     return Object.assign(svg.node(), {scales: {color: zScale}});
 }
