@@ -23,7 +23,8 @@
      d3.csv("books.csv")
                    .then(function(books) {
                        // want to have books go from oldest to most recent
-                       Scatterplot(books.sort((x, y) => dateparse(x.date_started).getTime() - dateparse(y.date_started).getTime()), {
+                       books = books.sort((x, y) => dateparse(x.date_started).getTime() - dateparse(y.date_started).getTime())
+                       Scatterplot(books, {
                            x1: d => d3.timeDay(dateparse(['2015'].concat(d.date_started.split('/').slice(1, 3)).join('/'))),
                            x2: d => d3.timeDay(dateparse(['2015'].concat(d.date_read.split('/').slice(1, 3)).join('/'))),
                            y1: d => d3.timeYear(dateparse(d.date_started)),

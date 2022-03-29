@@ -13,7 +13,9 @@ function textSize(text) {
 
 
 function PivotBooks(data) {
-    return d3.flatRollup(data, d=> d.length, d => d3.timeYear(dateparse(d.date_started)), d => d.fiction)
+    rolled = d3.flatRollup(data, d=> d.length, d => d3.timeYear(dateparse(d.date_started)), d => d.fiction)
+    // we want this in reverse chronological order
+    return rolled.sort((x, y) => x[0].getTime() - y[0].getTime()).reverse()
 }
 
 function GroupedBarChart(data, {
@@ -64,6 +66,7 @@ function GroupedBarChart(data, {
     // Chose a default color scheme based on cardinality.
     if (colors === undefined) colors = d3.schemeSpectral[zDomain.size];
     if (colors === undefined) colors = d3.quantize(d3.interpolateSpectral, zDomain.size);
+    colors = colors.reverse()
     // Construct scales, axes, and formats. xzScales and yScales are arrays
     // of scales, but each scale is identical (because we want them to have same range)
     const xzScales = Z.map(Z => d3.scaleBand(zDomain, zRange).padding(zPadding));
