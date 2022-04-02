@@ -18,6 +18,49 @@ function offset(X1, X2, padding, current_offset, years, current_year) {
   return Y;
 }
 
+function get_z(z_name) {
+  try {
+    z_name = d3.select("#" + z_name + "_z_select").property('value')
+  } catch (e) {
+    if (!(e instanceof TypeError)) {
+      console.error(e)
+    }
+    // else we assume it's because z_name isn't related to the element typebut
+    // already the name of the z
+  }
+  if (z_name === 'fiction') {
+    z = d => d.fiction
+  } else if (z_name === 'ownership') {
+    function z(d) {
+      if (['Henry', 'Maija', 'Joseph', 'Natalie'].indexOf(d.ownership) != -1) return 'friend'
+      return d.ownership
+    }
+  }
+  return z
+}
+
+function get_colormap(data, plot_type) {
+  z_name = d3.select("#" + plot_type + "_z_select").property('value')
+  z = get_z(z_name)
+  var Z = d3.map(data, z)
+  // turn it into a set to remove duplicates, then back into an array so we can
+  // use filter and sort
+  zDomain = new Array(...new d3.InternSet(Z));
+  if (z_name === 'fiction') {
+    var colors = d3.schemeCategory10
+    order = ['True', 'False']
+  } else if (z_name === 'ownership') {
+    var colors = d3.schemeDark2
+    // this makes sure the order is me, library, Anna, friend, and then anything
+    // else, in alphabetical order
+    order = ['me', 'library', 'Anna', 'friend']
+    zDomain = zDomain.filter(v => order.indexOf(v) == -1)
+    order = order.concat(zDomain.sort())
+  }
+  var color = d3.scaleOrdinal(order, colors);
+  return [color, order]
+}
+
 function format_date(d, begin) {
   dateparse = d3.timeParse('%Y/%m/%d')
   if (begin === true) {
@@ -33,7 +76,6 @@ function Scatterplot(data, {
   x2 = ([x]) => x2, // given d in data, returns the (quantitative) x-value
   y1 = ([, y]) => y1, // given d in data, returns the (quantitative) y-value
   y2 = ([, y]) => y2, // given d in data, returns the (quantitative) y-value
-  z = ([z]) => z,
   r = 3, // (fixed) radius of dots, in pixels
   marginTop = 20, // top margin, in pixels
   marginRight = 30, // right margin, in pixels
@@ -49,19 +91,18 @@ function Scatterplot(data, {
   colors, // color scheme
   padding = 1.5, // (fixed) padding between the circles
 } = {}) {
+  z = get_z('scatter')
   // Compute values.
   const X1 = d3.map(data, x1);
   const X2 = d3.map(data, x2);
   const Y1 = d3.map(data, y1);
   const Y2 = d3.map(data, y2);
-  const Z = d3.map(data, z);
+  var Z = d3.map(data, z);
   const authors = d3.map(data, d => d.author);
   const I = d3.range(X1.length).filter(i => !isNaN(X1[i]) && !isNaN(Y1[i]));
   // Compute default domains.
   var xDomain = d3.extent(X1);
   var yDomain = d3.extent(Y1);
-  var zDomain = Z;
-  zDomain = new d3.InternSet(zDomain);
 
   // compute height based on number of years
   var unique_times = [...new Set(Y1.map(d => d.getTime()))]
@@ -69,31 +110,30 @@ function Scatterplot(data, {
   height = marginBottom + height_per_year * height.size + marginTop
   var yRange = [height - marginBottom - height_per_year, marginTop]
 
-  // Chose a default color scheme based on cardinality.
-  if (colors === undefined) colors = d3.schemeSpectral[zDomain.size];
-  if (colors === undefined) colors = d3.quantize(d3.interpolateSpectral, zDomain.size);
   // Construct scales and axes.
   const xScale = xType(xDomain, xRange);
   // need to pad an extra year for the ticks
   const yScale = yType(yDomain, yRange).nice(d3.min(Y1).getFullYear(), d3.timeYear.count(d3.max(Y1).getFullYear()));
   const xAxis = d3.axisBottom(xScale).ticks(d3.timeMonth.every(1), xFormat);
   const yAxis = d3.axisLeft(yScale).ticks(d3.timeYear.every(1), yFormat);
-  const color = d3.scaleOrdinal(zDomain, colors);
+  [color, order] = get_colormap(data, 'scatter')
 
   swatchSize = 15
-  const legend = Swatches(color, {marginLeft: marginLeft, swatchSize: swatchSize, marginTop: 0})
+  var legend = Swatches(color, {marginLeft: marginLeft, swatchSize: swatchSize, marginTop: 0})
 
   d3.select('#legend')
-    .append('text')
-      .attr("fill", "currentColor")
-      .attr("text-anchor", "start")
-      .style('font', '12px sans-serif')
-      .style("font-weight", "bold")
-      .style("margin-left", marginLeft + 'px')
-      .attr("class", "title")
-      .text('Fiction')
+  //   .append('text')
+  //     .attr("fill", "currentColor")
+  //     .attr("text-anchor", "start")
+  //     .style('font', '12px sans-serif')
+  //     .style("font-weight", "bold")
+  //     .style("margin-left", marginLeft + 'px')
+  //     .attr("class", "title")
+  //     .text('Fiction')
   d3.select('#legend')
-    .append('div').html(legend)
+    .append('div')
+      .html(legend)
+      .attr('id', 'legend-swatches')
 
   const svg = d3.select("#scatter")
       .attr("width", width)
@@ -284,6 +324,26 @@ function Scatterplot(data, {
          .attr('id', 'date_read')
          .attr('y', '-12')
 
+  // add x labels to barplot, then can switch colors separately (add toggle to make second dropdown not locked
+  function update_z() {
+    z = get_z('scatter')
+    Z = d3.map(data, z);
+    [color, order] = get_colormap(data, 'scatter');
+    d3.selectAll('.connect')
+      .attr('stroke', i => color(Z[i]))
+    d3.selectAll('.year-start')
+      .attr('stroke', i => color(Z[i]))
+    d3.selectAll('circle')
+      .attr('fill', i => color(Z[i]))
+    legend = Swatches(color, {marginLeft: marginLeft, swatchSize: swatchSize, marginTop: 0})
+    d3.select('#legend-swatches')
+      .html(legend)
+    d3.select('#lock_check').on('click')();
+  }
+  d3.select('#scatter_z_select')
+    .on('change', () => update_z())
+
+
   return svg.node();
 }
 // Copyright 2021, Observable Inc.
@@ -343,22 +403,22 @@ function Swatches(color, {
 </div>`;
 
   return `<div style="display: flex; align-items: center; min-height: 33px; margin-left: ${+marginLeft}px; font: 10px sans-serif;">
-  <style>
+   <style>
 
-.${id} {
-  display: inline-flex;
-  align-items: center;
-  margin-right: 1em;
-}
+ .${id} {
+   display: inline-flex;
+   align-items: center;
+   margin-right: 1em;
+ }
 
-.${id}::before {
-  content: "";
-  width: ${+swatchWidth}px;
-  height: ${+swatchHeight}px;
-  margin-right: 0.5em;
-  background: var(--color);
-}
+ .${id}::before {
+   content: "";
+   width: ${+swatchWidth}px;
+   height: ${+swatchHeight}px;
+   margin-right: 0.5em;
+   background: var(--color);
+ }
 
-  </style>
-  <div>${domain.map(value => `<span class="${id}" style="--color: ${color(value)}">${format(value)}</span>`)}</div>`;
+   </style>
+  <div>${domain.map(value => `<span class="${id}" style="--color: ${color(value)}">${format(value)}</span>`).join('')}</div>`;
 }

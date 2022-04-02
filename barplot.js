@@ -11,16 +11,16 @@ function textSize(text) {
     return { width: size.width, height: size.height };
 }
 
-
-function PivotBooks(data) {
-    rolled = d3.flatRollup(data, d=> d.length, d => d3.timeYear(dateparse(d.date_started)), d => d.fiction)
+function PivotBooks(data, {
+    z = get_z('bar'),
+    y = d => d.length
+} = {}) {
+    rolled = d3.flatRollup(data, y, d => d3.timeYear(dateparse(d.date_started)), z)
     // we want this in reverse chronological order
     return rolled.sort((x, y) => x[0].getTime() - y[0].getTime()).reverse()
 }
 
 function GroupedBarChart(data, {
-    point_value_data = [], // data connecting the values for the points
-    point_year_data = [], // data containing the years for the points
     marginTop = 20, // top margin, in pixels
     marginRight = 0, // right margin, in pixels
     marginBottom = 25, // bottom margin, in pixels
@@ -28,52 +28,47 @@ function GroupedBarChart(data, {
     height_per_year = 140,
     year_padding = 5,
     yType = d3.scaleLinear, // type of y-scale
-    yDomain, // [ymin, ymax]
-    zDomain, // array of z-values
     bar_width = 25, // width of each bar
     zPadding = 0.05, // amount of x-range to reserve to separate bars
     yFormat, // a format specifier string for the y-axis
     yLabel, // a label for the y-axis
-    colors, // array of colors
     scatterplot_padding = 1.5, // padding used in the scatterplot, used to offset cells so they line up
 } = {}) {
+    // remove all children so we can redraw it from fresh
+    d3.select('#bar').selectAll('*').remove()
+    // get scatter data
+    var point_value_data = d3.map(data, get_z('bar'))
+    var point_year_data = d3.map(data, d => d3.timeYear(dateparse(d.date_started)))
     // Compute values.
     //
     // first entry will always be years, which we want one per row. Each of the
     // following will be an array of arrays, with each row represented as a
     // different value in the array (e.g., Y[0] is the array of X values for the first row)
-    const grouped_data = d3.groups(data, d => d[0])
+    var grouped_data = d3.groups(PivotBooks(data), d => d[0])
     const Rows = d3.map(grouped_data, d => d[0])
     // last entry will always be how we rolled up the books (e.g., count)
-    const Y = d3.map(grouped_data, d => d3.map(d[1], d => d.slice(-1)[0]));
+    var Y = d3.map(grouped_data, d => d3.map(d[1], d => d.slice(-1)[0]));
     // and second entry will be the other column we're facetting on
-    const Z = d3.map(grouped_data, d => d3.map(d[1], d => d[1]));
+    var Z = d3.map(grouped_data, d => d3.map(d[1], d => d[1]));
 
     // Compute default domains, and unique the x- and z-domains.
-    if (yDomain === undefined) yDomain = [0, d3.max(Y.flat())];
-    if (zDomain === undefined) zDomain = Z.flat();
-    zDomain = new d3.InternSet(zDomain);
+    yDomain = [0, d3.max(Y.flat())];
+    [zScale, zDomain] = get_colormap(data, 'bar');
 
-    // Omit any data not present in both the x- and z-domain.
-    const I = d3.range(Y[0].length)
+    const I = d3.range(d3.max(Y, y => y.length))
 
     var height = marginBottom + height_per_year * Rows.length + marginTop
     var yRange = [height_per_year - year_padding, 0] // [ymin, ymax]
 
-    var width = bar_width * zDomain.size;
+    var width = bar_width * zDomain.length;
     var zRange = [0, width] // [xmin, xmax]
 
-    // Chose a default color scheme based on cardinality.
-    if (colors === undefined) colors = d3.schemeSpectral[zDomain.size];
-    if (colors === undefined) colors = d3.quantize(d3.interpolateSpectral, zDomain.size);
-    colors = colors.reverse()
     // Construct scales, axes, and formats. xzScales and yScales are arrays
     // of scales, but each scale is identical (because we want them to have same range)
-    const xzScales = Z.map(Z => d3.scaleBand(zDomain, zRange).padding(zPadding));
-    const yScales = Y.map(Y => yType(yDomain, yRange));
-    const zScale = d3.scaleOrdinal(zDomain, colors);
-    const xAxis = d3.axisBottom(xzScales[0]).tickSizeOuter(0);
-    const yAxis = d3.axisLeft(yScales[0]).ticks(height_per_year / 60, yFormat);
+    var xzScales = Z.map(Z => d3.scaleBand(zDomain, zRange).padding(zPadding));
+    var yScales = Y.map(Y => yType(yDomain, yRange));
+    var xAxis = d3.axisBottom(xzScales[0]).tickSizeOuter(0);
+    var yAxis = d3.axisLeft(yScales[0]).ticks(height_per_year / 60, yFormat);
 
     // want to make sure svg element is wide enough for the title
     full_width = d3.max([width + marginLeft + marginRight, textSize(yLabel).width]);
@@ -88,41 +83,41 @@ function GroupedBarChart(data, {
        .selectAll("g")
        .data(yScales)
        .join('g')
-         .attr('transform', (d, i) => `translate(0, ${i * height_per_year + marginTop - scatterplot_padding})`)
-         .each(function(yScale) { return d3.select(this).call(yAxis.scale(yScale)); })
-         .call(g => g.select(".domain").remove())
-         .call(g => g.selectAll(".tick line").clone()
-                     .attr("x2", width)
-                     .attr("stroke-opacity", 0.1))
-         .call(g => g.append("text")
-                     .attr("x", -marginLeft)
-                     .attr("y", 0)
-                     .attr("fill", "black")
-                     .attr("text-anchor", "start")
-                     .attr('font-size', 'small')
-                     .text((d, i) => i==0 ? yLabel: null))
+       .attr('transform', (d, i) => `translate(0, ${i * height_per_year + marginTop - scatterplot_padding})`)
+       .each(function(yScale) { return d3.select(this).call(yAxis.scale(yScale)); })
+       .call(g => g.select(".domain").remove())
+       .call(g => g.selectAll(".tick line").clone()
+                   .attr("x2", width)
+                   .attr("stroke-opacity", 0.1))
+       .call(g => g.append("text")
+                   .attr("x", -marginLeft)
+                   .attr("y", 0)
+                   .attr("fill", "black")
+                   .attr("text-anchor", "start")
+                   .attr('font-size', 'small')
+                   .text((d, i) => i==0 ? yLabel: null))
 
 
     const cell = svg.append('g')
                     .selectAll('g')
                     .data(d3.range(Rows.length))
                     .join('g')
-                      .attr('transform', i => `translate(0, ${i * height_per_year + marginTop - scatterplot_padding})`)
+                    .attr('transform', i => `translate(0, ${i * height_per_year + marginTop - scatterplot_padding})`)
 
     cell.each(function(row_j) {
         d3.select(this).selectAll('rect')
-          .data(I.filter(i => !isNaN(Y[row_j][i])))
+          .data(I)
           .join('rect')
-            .attr('class', 'bar')
-            .attr("x", i => xzScales[row_j](Z[row_j][i]))
-            .attr("y", i => yScales[row_j](Y[row_j][i]))
-            .attr("width", xzScales[row_j].bandwidth())
-            .attr("height", i => yScales[row_j](0) - yScales[row_j](Y[row_j][i]))
-            .attr("fill", i => zScale(Z[row_j][i]))
-            .on("mouseover", (event, i) => update_tooltip(grouped_data[row_j][1][i],
-                                                          xzScales[row_j](Z[row_j][i]),
-                                                          row_j * height_per_year + marginTop - scatterplot_padding + yScales[row_j](Y[row_j][i])))
-            .on("mouseout", () => hide_tooltip())
+          .attr('class', 'bar')
+          .attr("x", i => xzScales[row_j](Z[row_j][i]))
+          .attr("y", i => yScales[row_j](Y[row_j][i]))
+          .attr("width", xzScales[row_j].bandwidth())
+          .attr("height", i => yScales[row_j](0) - yScales[row_j](Y[row_j][i]))
+          .attr("fill", i => zScale(Z[row_j][i]))
+          .on("mouseover", (event, i) => update_tooltip(grouped_data[row_j][1][i],
+                                                        xzScales[row_j](Z[row_j][i]),
+                                                        row_j * height_per_year + marginTop - scatterplot_padding + yScales[row_j](Y[row_j][i])))
+          .on("mouseout", () => hide_tooltip())
     })
 
     function update_tooltip(d, x, y) {
@@ -135,7 +130,7 @@ function GroupedBarChart(data, {
         d3.select('#tooltip-rect-bar').attr('width', d3.max(elements.map(elt => elt.node().getBBox().width))+tt_padding)
         d3.select('#tooltip-rect-bar').attr('x', d3.min(elements.map(elt => elt.node().getBBox().x))-tt_padding/2)
         d3.selectAll('.bar')
-          .attr('fill-opacity', (i, j) => (grouped_data[Math.floor(j/2)][0].getTime() == d[0].getTime() && grouped_data[Math.floor(j/2)][1][i][1]) == d[1] ? 1 : .2)
+          .attr('fill-opacity', (i, j) => (grouped_data[Math.floor(j/I.length)][0].getTime() == d[0].getTime() && grouped_data[Math.floor(j/I.length)][1][i] && grouped_data[Math.floor(j/I.length)][1][i][1]) == d[1] ? 1 : .2)
         d3.selectAll('circle')
           .attr('fill-opacity', i => point_value_data[i] == d[1] && point_year_data[i].getTime() == d[0].getTime() ? 1 : .2)
         d3.selectAll('.connect')
@@ -152,8 +147,8 @@ function GroupedBarChart(data, {
           .attr('fill-opacity', 1)
         d3.selectAll('.connect')
           .attr('stroke-opacity', 1)
-    d3.selectAll('.year-start')
-      .attr('stroke-opacity', 1)
+        d3.selectAll('.year-start')
+          .attr('stroke-opacity', 1)
     }
 
     var tooltip = svg.append('g')
@@ -176,6 +171,62 @@ function GroupedBarChart(data, {
     tooltip.append('text')
            .attr('id', 'value')
            .attr('y', '-12')
+
+    // just redraw everything whenever we change z
+    d3.select('#bar_z_select')
+      .on('change', () => GroupedBarChart(data, {
+          marginTop: marginTop,
+          marginRight: marginRight,
+          marginBottom: marginBottom,
+          marginLeft: marginLeft,
+          height_per_year: height_per_year,
+          year_padding: year_padding,
+          yType: yType,
+          bar_width: bar_width,
+          zPadding: zPadding,
+          yFormat: yFormat,
+          yLabel: yLabel,
+          scatterplot_padding: scatterplot_padding,
+      }))
+
+    svg.append("g")
+       .attr("transform", `translate(0,${height - marginBottom - 2*scatterplot_padding})`)
+       .call(xAxis)
+       .selectAll('text')
+       .attr('y', 0)
+       .attr('dy', '.35em')
+       .attr('x', 9)
+       .style('text-anchor', 'start')
+       .attr('transform', 'rotate(90)')
+
+    function lock_input() {
+        let inputVal = document.getElementById("lock_check").checked;
+        if (inputVal) {
+            if (d3.select('#scatter_z_select').property('value') != d3.select('#bar_z_select').property('value')) {
+                d3.select('#bar_z_select').property('value', d3.select('#scatter_z_select').property('value'))
+                GroupedBarChart(data, {
+                    marginTop: marginTop,
+                    marginRight: marginRight,
+                    marginBottom: marginBottom,
+                    marginLeft: marginLeft,
+                    height_per_year: height_per_year,
+                    year_padding: year_padding,
+                    yType: yType,
+                    bar_width: bar_width,
+                    zPadding: zPadding,
+                    yFormat: yFormat,
+                    yLabel: yLabel,
+                    scatterplot_padding: scatterplot_padding,
+                })
+            }
+            d3.select('#bar_z_select').attr('disabled', 'disabled')
+        } else {
+            d3.select('#bar_z_select').attr('disabled', null)
+        }
+    }
+
+    d3.select('#lock_check')
+      .on('click', () => lock_input())
 
     return Object.assign(svg.node(), {scales: {color: zScale}});
 }

@@ -12,14 +12,29 @@
         <!-- Place favicon.ico in the root directory -->
 
     </head>
-    <g>
-        <div id='legend'></div>
-        <svg id='scatter'></svg>
-        <svg id='bar'></svg>
-    </g>
-    <body>
+    <body onload="uncheck()">
+        <g>
+            <div id='legend'>
+                <div id="select_container">
+                    <select name='scatter_z_select' id='scatter_z_select' style='margin-left: 40px'>
+                        <option value='fiction'>Fiction?</option>
+                        <option value='ownership'>Who owned?</option>
+                    </select>
+                    <input type='checkbox' id='lock_check' name='lock_check' style='margin-left: 762px'>
+                    <select name='bar_z_select' id='bar_z_select'>
+                        <option value='fiction'>Fiction?</option>
+                        <option value='ownership'>Who owned?</option>
+                    </select>
+                </div>
+            </div>
+            <svg id='scatter'></svg>
+            <svg id='bar'></svg>
+        </g>
     </body>
     <script type="text/javascript">
+     function uncheck() {
+         document.getElementById('lock_check').checked = false
+     }
      dateparse = d3.timeParse('%Y/%m/%d')
      d3.csv("books.csv")
                    .then(function(books) {
@@ -30,7 +45,6 @@
                            x2: d => d3.timeDay(dateparse(['2015'].concat(d.date_read.split('/').slice(1, 3)).join('/'))),
                            y1: d => d3.timeYear(dateparse(d.date_started)),
                            y2: d => d3.timeYear(dateparse(d.date_read)),
-                           z: d => d.fiction,
                            title: d => d.title,
                            xType: d3.scaleTime,
                            xDomain: [dateparse('2015/01/01'), dateparse('2015/12/31')],
@@ -40,11 +54,11 @@
                            padding: 5,
                            r: 3,
                            width: 928,
+                           marginBottom: 50,
                        })
-                       GroupedBarChart(PivotBooks(books), {
-                           point_value_data: d3.map(books, d => d.fiction),
-                           point_year_data: d3.map(books, d => d3.timeYear(dateparse(d.date_started))),
+                       GroupedBarChart(books, {
                            width: 200,
+                           marginBottom: 50,
                            scatterplot_padding: 5,
                            yLabel: 'Number of books read',
                        })
