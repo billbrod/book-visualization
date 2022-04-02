@@ -220,8 +220,10 @@ function GroupedBarChart(data, {
                 })
             }
             d3.select('#bar_z_select').attr('disabled', 'disabled')
+            d3.select('#lock_label').attr('class', 'clicked')
         } else {
             d3.select('#bar_z_select').attr('disabled', null)
+            d3.select('#lock_label').attr('class', 'unclicked')
         }
     }
 

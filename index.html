@@ -12,16 +12,66 @@
         <!-- Place favicon.ico in the root directory -->
 
     </head>
+    <style>
+     .switch {
+         width: 22px;
+         height: 22px;
+         position: relative;
+         vertical-align: bottom;
+     }
+     .switch input {
+         /* First, we make it as wide as the container */
+         position: absolute;
+         width: 100%;
+         height: 100%;
+         /* Then, we put it on top of everything else */
+         z-index: 100;
+         /* Last, we make it invisible */
+         opacity: 0;
+         /* This one is just for ergonomy */
+         cursor: pointer;
+     }
+     .switch label {
+         display: block;
+         width: 100%;
+         height: 100%;
+         position: relative;
+         border-radius: .25rem;
+         border: 1px solid #999999;
+     }
+     .unclicked {
+         background: #eaeaea;
+     }
+     .clicked {
+         background: #999999;
+     }
+     .switch svg {
+         position: absolute;
+         top: 60%;
+         left: 65%;
+         transform: translate(-50%, -50%);
+     }
+    </style>
     <body onload="uncheck()">
         <g>
             <div id='legend'>
-                <div id="select_container">
-                    <select name='scatter_z_select' id='scatter_z_select' style='margin-left: 40px'>
+                <div id="select_container" style="display: table; border-spacing: 5px">
+                    <select name='scatter_z_select' id='scatter_z_select' style='margin-left: 40px; display: table-cell' >
                         <option value='fiction'>Fiction?</option>
                         <option value='ownership'>Who owned?</option>
                     </select>
-                    <input type='checkbox' id='lock_check' name='lock_check' style='margin-left: 762px'>
-                    <select name='bar_z_select' id='bar_z_select'>
+                    <!-- fake element to make sure things line up -->
+                    <div style='width: 752px; display: table-cell'></div>
+                    <div class='switch' style='display: table-cell'>
+                        <input type='checkbox' id='lock_check' name='lock_check'>
+                        <label id='lock_label' class='unclicked'>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" fill="black">
+                                <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM5 8h6a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"></path>
+                            </svg>
+                            <!-- <img src="lock.svg" width="100%" height="100%"/> -->
+                        </label>
+                    </div>
+                    <select name='bar_z_select' id='bar_z_select' style='display: table-cell'>
                         <option value='fiction'>Fiction?</option>
                         <option value='ownership'>Who owned?</option>
                     </select>
@@ -36,6 +86,13 @@
          document.getElementById('lock_check').checked = false
      }
      dateparse = d3.timeParse('%Y/%m/%d')
+     // tooltip can cover up other highlighted points -- change that?
+     // for scatterplot tooltip, add titles to extra highlights?
+     // make bar plot tooltip text more informative (pass function)
+     // add dropdown for picking what gets mapped as color
+     // add dropdown for picking whta gets plotted as bar plot
+     // connect tooltips for two: when you highlight bar plot, highlight relevant points and vice versa
+     // allow separation of color for the two plots? could make the cross-highlighting more informative
      d3.csv("books.csv")
                    .then(function(books) {
                        // want to have books go from oldest to most recent
