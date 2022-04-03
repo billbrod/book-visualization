@@ -28,17 +28,13 @@ function get_z(z_name) {
     // else we assume it's because z_name isn't related to the element typebut
     // already the name of the z
   }
-  if (z_name === 'fiction') {
-    z = d => d.fiction
-  } else if (z_name === 'ownership') {
+  if (z_name === 'ownership') {
     function z(d) {
       if (['Henry', 'Maija', 'Joseph', 'Natalie'].indexOf(d.ownership) != -1) return 'friend'
       return d.ownership
     }
-  } else if (z_name === 'format') {
-    z = d => d.format
-  } else if (z_name === 'rating') {
-    z = d => d.rating
+  } else {
+    z = d => d[z_name]
   }
   return z
 }
@@ -50,6 +46,8 @@ function get_colormap(data, plot_type) {
   // turn it into a set to remove duplicates, then back into an array so we can
   // use filter and sort
   zDomain = new Array(...new d3.InternSet(Z));
+  var order;
+  var color;
   if (z_name === 'fiction') {
     var colors = d3.schemeCategory10
     order = ['True', 'False']
@@ -67,7 +65,7 @@ function get_colormap(data, plot_type) {
     var colors = d3.schemeOrRd[5]
     order = ["1", "2", "3", "4", "5"]
   }
-  var color = d3.scaleOrdinal(order, colors);
+  if (color === undefined) color = d3.scaleOrdinal(order, colors);
   return [color, order]
 }
 
