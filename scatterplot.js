@@ -78,7 +78,7 @@ function format_date(d, begin) {
   } else {
     date = d.date_read
   }
-  return d3.timeFormat('%b %-d, %Y')(dateparse(date))
+  return d3.timeFormat('%b %-d')(dateparse(date))
 }
 
 function Scatterplot(data, {
@@ -147,8 +147,7 @@ function Scatterplot(data, {
     elements = []
     elements.push(d3.select('#title').text(d.title))
     elements.push(d3.select('#author').text("by " + d.author + ' (' + d.year_published + ')'))
-    elements.push(d3.select('#date_started').text("Started: " + format_date(d, true)));
-    elements.push(d3.select('#date_read').text("Finished: " + format_date(d, false)));
+    elements.push(d3.select('#date').text(format_date(d, true) + ' to ' + format_date(d, false)));
     d3.select('#tooltip-rect-scatter').attr('width', d3.max(elements.map(elt => elt.node().getBBox().width))+tt_padding)
     d3.select('#tooltip-rect-scatter').attr('x', d3.min(elements.map(elt => elt.node().getBBox().x))-tt_padding/2)
     if (x - d3.select('#tooltip-rect-scatter').attr('width')/2 < 0) {
@@ -308,20 +307,17 @@ function Scatterplot(data, {
   tooltip.append('rect')
          .attr('id', 'tooltip-rect-scatter')
          .style('fill', 'white')
-         .attr('y', '-60')
-         .attr('height', '55')
+         .attr('y', '-50')
+         .attr('height', '45')
          .style('stroke', 'black')
   tooltip.append('text')
          .attr('id', 'title')
-         .attr('y', '-48')
-  tooltip.append('text')
-         .attr('id', 'author')
          .attr('y', '-36')
   tooltip.append('text')
-         .attr('id', 'date_started')
+         .attr('id', 'author')
          .attr('y', '-24')
   tooltip.append('text')
-         .attr('id', 'date_read')
+         .attr('id', 'date')
          .attr('y', '-12')
 
   function update_z() {
