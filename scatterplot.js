@@ -144,7 +144,7 @@ function Scatterplot(data, {
     tt_padding = 10
     elements = []
     elements.push(d3.select('#title').text(d.title))
-    elements.push(d3.select('#author').text("by " + d.author))
+    elements.push(d3.select('#author').text("by " + d.author + ' (' + d.year_published + ')'))
     elements.push(d3.select('#date_started').text("Started: " + format_date(d, true)));
     elements.push(d3.select('#date_read').text("Finished: " + format_date(d, false)));
     d3.select('#tooltip-rect-scatter').attr('width', d3.max(elements.map(elt => elt.node().getBBox().width))+tt_padding)
