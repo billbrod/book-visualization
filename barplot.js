@@ -31,7 +31,7 @@ function PivotBooks(data, {
 
 function GroupedBarChart(data, {
     marginTop = 20, // top margin, in pixels
-    marginRight = 0, // right margin, in pixels
+    marginRight = 20, // right margin, in pixels
     marginBottom = 25, // bottom margin, in pixels
     marginLeft = 40, // left margin, in pixels
     height_per_year = 140,
@@ -138,6 +138,16 @@ function GroupedBarChart(data, {
         elements.push(d3.select('#value').text(d[2]))
         d3.select('#tooltip-rect-bar').attr('width', d3.max(elements.map(elt => elt.node().getBBox().width))+tt_padding)
         d3.select('#tooltip-rect-bar').attr('x', d3.min(elements.map(elt => elt.node().getBBox().x))-tt_padding/2)
+        if (x + Number(d3.select('#tooltip-rect-bar').attr('width')) + marginLeft > Number(svg.attr('width'))) {
+            d3.select('.tooltip-bar').attr('text-anchor', 'end')
+        } else {
+            d3.select('.tooltip-bar').attr('text-anchor', 'start')
+        }
+        // need to check this again after potentially updating the text-anchor
+        d3.select('#tooltip-rect-bar').attr('x', d3.min(elements.map(elt => elt.node().getBBox().x))-tt_padding/2)
+        if (y - d3.select('#tooltip-rect-bar').attr('height') < 0) {
+            y = y + Number(d3.select('#tooltip-rect-bar').attr('height')) + r*2+padding
+        }
         d3.selectAll('.bar')
           .attr('fill-opacity', (i, j) => (grouped_data[Math.floor(j/I.length)][0].getTime() == d[0].getTime() && grouped_data[Math.floor(j/I.length)][1][i] && grouped_data[Math.floor(j/I.length)][1][i][1]) == d[1] ? 1 : .1)
         d3.selectAll('circle')
