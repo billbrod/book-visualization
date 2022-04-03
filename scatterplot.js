@@ -35,6 +35,8 @@ function get_z(z_name) {
       if (['Henry', 'Maija', 'Joseph', 'Natalie'].indexOf(d.ownership) != -1) return 'friend'
       return d.ownership
     }
+  } else if (z_name === 'format') {
+    z = d => d.format
   } else if (z_name === 'rating') {
     z = d => d.rating
   }
@@ -58,6 +60,9 @@ function get_colormap(data, plot_type) {
     order = ['me', 'library', 'Anna', 'friend']
     zDomain = zDomain.filter(v => order.indexOf(v) == -1)
     order = order.concat(zDomain.sort())
+  } else if (z_name === 'format') {
+    var colors = d3.schemePaired.slice(0, 2).concat([d3.schemePaired[3], d3.schemePaired[8]])
+    order = ['paperback', 'hardback', 'ebook', 'print-on-demand']
   } else if (z_name === 'rating') {
     var colors = d3.schemeOrRd[5]
     order = ["1", "2", "3", "4", "5"]

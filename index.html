@@ -58,6 +58,7 @@
                         <option value='fiction'>Fiction?</option>
                         <option value='ownership'>Who owned?</option>
                         <option value='rating'>Rating</option>
+                        <option value='format'>Format</option>
                     </select>
                     <!-- fake element to make sure things line up -->
                     <div style='width: 757px; display: table-cell'></div>
@@ -73,6 +74,7 @@
                         <option value='fiction'>Fiction?</option>
                         <option value='ownership'>Who owned?</option>
                         <option value='rating'>Rating</option>
+                        <option value='format'>Format</option>
                     </select>
                 </div>
                 <div id='second-legend-row' style='display: table'>
@@ -98,7 +100,6 @@
      // add dropdown for picking what gets mapped as color
      // add dropdown for picking whta gets plotted as bar plot
      // connect tooltips for two: when you highlight bar plot, highlight relevant points and vice versa
-     // allow separation of color for the two plots? could make the cross-highlighting more informative
      d3.csv("books.csv")
                    .then(function(books) {
                        // want to have books go from oldest to most recent
