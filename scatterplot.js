@@ -322,7 +322,6 @@ function Scatterplot(data, {
          .attr('id', 'date_read')
          .attr('y', '-12')
 
-  // add x labels to barplot, then can switch colors separately (add toggle to make second dropdown not locked
   function update_z() {
     z = get_z('scatter')
     Z = d3.map(data, z);
