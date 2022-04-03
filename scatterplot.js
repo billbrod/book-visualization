@@ -33,6 +33,8 @@ function get_z(z_name) {
       if (['Henry', 'Maija', 'Joseph', 'Natalie'].indexOf(d.ownership) != -1) return 'friend'
       return d.ownership
     }
+  } else if (z_name === 'fiction') {
+    z = d => new Object({'True': 'Fiction', 'False': 'Non-fiction'})[d.fiction]
   } else {
     z = d => d[z_name]
   }
@@ -50,7 +52,7 @@ function get_colormap(data, plot_type) {
   var color;
   if (z_name === 'fiction') {
     var colors = d3.schemeCategory10
-    order = ['True', 'False']
+    order = ['Fiction', 'Non-fiction']
   } else if (z_name === 'ownership') {
     var colors = d3.schemeDark2
     // this makes sure the order is me, library, Anna, friend, and then anything
