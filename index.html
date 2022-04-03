@@ -9,8 +9,6 @@
         <script src="https://d3js.org/d3.v7.min.js"></script>
         <script type="text/javascript" src="scatterplot.js"></script>
         <script type="text/javascript" src="barplot.js"></script>
-        <!-- Place favicon.ico in the root directory -->
-
     </head>
     <style>
      .switch {
@@ -56,24 +54,30 @@
         <g>
             <div id='legend'>
                 <div id="select_container" style="display: table; border-spacing: 5px">
-                    <select name='scatter_z_select' id='scatter_z_select' style='margin-left: 40px; display: table-cell' >
+                    <select name='scatter_z_select' id='scatter_z_select' style='margin-left: 35px; display: table-cell' >
                         <option value='fiction'>Fiction?</option>
                         <option value='ownership'>Who owned?</option>
                     </select>
                     <!-- fake element to make sure things line up -->
-                    <div style='width: 752px; display: table-cell'></div>
+                    <div style='width: 757px; display: table-cell'></div>
                     <div class='switch' style='display: table-cell'>
                         <input type='checkbox' id='lock_check' name='lock_check'>
                         <label id='lock_label' class='unclicked'>
                             <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" fill="black">
                                 <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM5 8h6a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"></path>
                             </svg>
-                            <!-- <img src="lock.svg" width="100%" height="100%"/> -->
                         </label>
                     </div>
                     <select name='bar_z_select' id='bar_z_select' style='display: table-cell'>
                         <option value='fiction'>Fiction?</option>
                         <option value='ownership'>Who owned?</option>
+                    </select>
+                </div>
+                <div id='second-legend-row' style='display: table'>
+                    <div id='legend-swatches' name='legend-swatches' style='display: table-cell'></div>
+                    <select name='bar_y_select' id='bar_y_select' style='display: table-cell'>
+                        <option value='books'>Number of books</option>
+                        <option value='pages'>Number of pages</option>
                     </select>
                 </div>
             </div>
@@ -116,8 +120,9 @@
                        GroupedBarChart(books, {
                            width: 200,
                            marginBottom: 50,
+                           marginLeft: 50,
                            scatterplot_padding: 5,
-                           yLabel: 'Number of books read',
+                           // yLabel: 'Number of books read',
                        })
                    })
     </script>

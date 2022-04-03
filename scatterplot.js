@@ -121,19 +121,10 @@ function Scatterplot(data, {
   swatchSize = 15
   var legend = Swatches(color, {marginLeft: marginLeft, swatchSize: swatchSize, marginTop: 0})
 
-  d3.select('#legend')
-  //   .append('text')
-  //     .attr("fill", "currentColor")
-  //     .attr("text-anchor", "start")
-  //     .style('font', '12px sans-serif')
-  //     .style("font-weight", "bold")
-  //     .style("margin-left", marginLeft + 'px')
-  //     .attr("class", "title")
-  //     .text('Fiction')
-  d3.select('#legend')
-    .append('div')
-      .html(legend)
-      .attr('id', 'legend-swatches')
+  d3.select('#legend-swatches').html(legend)
+
+  d3.select('#bar_y_select')
+    .style('margin-left', (width - document.getElementById('legend-swatches').offsetWidth + 5).toString() + 'px')
 
   const svg = d3.select("#scatter")
       .attr("width", width)

@@ -11,9 +11,18 @@ function textSize(text) {
     return { width: size.width, height: size.height };
 }
 
+function get_y() {
+    y_name = d3.select("#bar_y_select").property('value')
+   if (y_name === 'pages') {
+       return d => d3.sum(d.map(di => di.number_of_pages))
+   } else if (y_name === 'books') {
+       return d => d.length
+   }
+}
+
 function PivotBooks(data, {
     z = get_z('bar'),
-    y = d => d.length
+    y = get_y(),
 } = {}) {
     rolled = d3.flatRollup(data, y, d => d3.timeYear(dateparse(d.date_started)), z)
     // we want this in reverse chronological order
@@ -174,6 +183,23 @@ function GroupedBarChart(data, {
 
     // just redraw everything whenever we change z
     d3.select('#bar_z_select')
+      .on('change', () => GroupedBarChart(data, {
+          marginTop: marginTop,
+          marginRight: marginRight,
+          marginBottom: marginBottom,
+          marginLeft: marginLeft,
+          height_per_year: height_per_year,
+          year_padding: year_padding,
+          yType: yType,
+          bar_width: bar_width,
+          zPadding: zPadding,
+          yFormat: yFormat,
+          yLabel: yLabel,
+          scatterplot_padding: scatterplot_padding,
+      }))
+
+    // just redraw everything whenever we change y
+    d3.select('#bar_y_select')
       .on('change', () => GroupedBarChart(data, {
           marginTop: marginTop,
           marginRight: marginRight,
