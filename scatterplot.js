@@ -35,6 +35,8 @@ function get_z(z_name) {
       if (['Henry', 'Maija', 'Joseph', 'Natalie'].indexOf(d.ownership) != -1) return 'friend'
       return d.ownership
     }
+  } else if (z_name === 'rating') {
+    z = d => d.rating
   }
   return z
 }
@@ -56,6 +58,9 @@ function get_colormap(data, plot_type) {
     order = ['me', 'library', 'Anna', 'friend']
     zDomain = zDomain.filter(v => order.indexOf(v) == -1)
     order = order.concat(zDomain.sort())
+  } else if (z_name === 'rating') {
+    var colors = d3.schemeOrRd[5]
+    order = ["1", "2", "3", "4", "5"]
   }
   var color = d3.scaleOrdinal(order, colors);
   return [color, order]
@@ -88,7 +93,6 @@ function Scatterplot(data, {
   yType = d3.scaleLinear, // type of y-scale
   xFormat, // a format specifier string for the x-axis
   yFormat, // a format specifier string for the y-axis
-  colors, // color scheme
   padding = 1.5, // (fixed) padding between the circles
 } = {}) {
   z = get_z('scatter')
@@ -156,11 +160,11 @@ function Scatterplot(data, {
     }
     tooltip.attr('transform', `translate(${x},${y})`)
     d3.selectAll('circle')
-      .attr('fill-opacity', i => authors[i] == d.author ? 1 : .2)
+      .attr('fill-opacity', i => authors[i] == d.author ? 1 : .1)
     d3.selectAll('.connect')
-      .attr('stroke-opacity', i => authors[i] == d.author ? 1 : .2)
+      .attr('stroke-opacity', i => authors[i] == d.author ? 1 : .1)
     d3.selectAll('.year-start')
-      .attr('stroke-opacity', i => authors[i] == d.author ? 1 : .2)
+      .attr('stroke-opacity', i => authors[i] == d.author ? 1 : .1)
   };
 
   function hide_tooltip() {
@@ -330,6 +334,8 @@ function Scatterplot(data, {
     d3.select('#legend-swatches')
       .html(legend)
     d3.select('#lock_check').on('click')();
+    d3.select('#bar_y_select')
+      .style('margin-left', (width - document.getElementById('legend-swatches').offsetWidth + 5).toString() + 'px')
   }
   d3.select('#scatter_z_select')
     .on('change', () => update_z())

@@ -13,11 +13,11 @@ function textSize(text) {
 
 function get_y() {
     y_name = d3.select("#bar_y_select").property('value')
-   if (y_name === 'pages') {
-       return d => d3.sum(d.map(di => di.number_of_pages))
-   } else if (y_name === 'books') {
-       return d => d.length
-   }
+    if (y_name === 'pages') {
+        return d => d3.sum(d.map(di => di.number_of_pages))
+    } else if (y_name === 'books') {
+        return d => d.length
+    }
 }
 
 function PivotBooks(data, {
@@ -139,13 +139,13 @@ function GroupedBarChart(data, {
         d3.select('#tooltip-rect-bar').attr('width', d3.max(elements.map(elt => elt.node().getBBox().width))+tt_padding)
         d3.select('#tooltip-rect-bar').attr('x', d3.min(elements.map(elt => elt.node().getBBox().x))-tt_padding/2)
         d3.selectAll('.bar')
-          .attr('fill-opacity', (i, j) => (grouped_data[Math.floor(j/I.length)][0].getTime() == d[0].getTime() && grouped_data[Math.floor(j/I.length)][1][i] && grouped_data[Math.floor(j/I.length)][1][i][1]) == d[1] ? 1 : .2)
+          .attr('fill-opacity', (i, j) => (grouped_data[Math.floor(j/I.length)][0].getTime() == d[0].getTime() && grouped_data[Math.floor(j/I.length)][1][i] && grouped_data[Math.floor(j/I.length)][1][i][1]) == d[1] ? 1 : .1)
         d3.selectAll('circle')
-          .attr('fill-opacity', i => point_value_data[i] == d[1] && point_year_data[i].getTime() == d[0].getTime() ? 1 : .2)
+          .attr('fill-opacity', i => point_value_data[i] == d[1] && point_year_data[i].getTime() == d[0].getTime() ? 1 : .1)
         d3.selectAll('.connect')
-          .attr('stroke-opacity', i => point_value_data[i] == d[1] && point_year_data[i].getTime() == d[0].getTime() ? 1 : .2)
+          .attr('stroke-opacity', i => point_value_data[i] == d[1] && point_year_data[i].getTime() == d[0].getTime() ? 1 : .1)
         d3.selectAll('.year-start')
-          .attr('stroke-opacity', i => point_value_data[i] == d[1] && point_year_data[i].getTime() == d[0].getTime() ? 1 : .2)
+          .attr('stroke-opacity', i => point_value_data[i] == d[1] && point_year_data[i].getTime() == d[0].getTime() ? 1 : .1)
     };
 
     function hide_tooltip() {
