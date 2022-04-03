@@ -147,7 +147,7 @@ function Scatterplot(data, {
     elements = []
     elements.push(d3.select('#title').text(d.title))
     elements.push(d3.select('#author').text("by " + d.author + ' (' + d.year_published + ')'))
-    elements.push(d3.select('#date').text(format_date(d, true) + ' to ' + format_date(d, false)));
+    elements.push(d3.select('#date').text(`${format_date(d, true)} — ${format_date(d, false)}`));
     d3.select('#tooltip-rect-scatter').attr('width', d3.max(elements.map(elt => elt.node().getBBox().width))+tt_padding)
     d3.select('#tooltip-rect-scatter').attr('x', d3.min(elements.map(elt => elt.node().getBBox().x))-tt_padding/2)
     if (x - d3.select('#tooltip-rect-scatter').attr('width')/2 < 0) {
