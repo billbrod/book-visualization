@@ -107,7 +107,7 @@ function Scatterplot(data, {
   const Y1 = d3.map(data, y1);
   const Y2 = d3.map(data, y2);
   var Z = d3.map(data, z);
-  const authors = d3.map(data, d => d.author);
+  const visible_check = d3.map(data, d => d.author);
   const I = d3.range(X1.length).filter(i => !isNaN(X1[i]) && !isNaN(Y1[i]));
   // Compute default domains.
   var xDomain = d3.extent(X1);
@@ -141,37 +141,45 @@ function Scatterplot(data, {
       .attr("viewBox", [0, 0, width, height])
       .attr("style", "max-width: 100%; height: auto; height: intrinsic;");
 
-  function update_tooltip(d, x, y) {
+  tt_rect_height = 45
+  tt_padding = 10
+  function make_tooltip_visible(i, d_visible_check) {
+    tooltip = d3.select(`#tooltip-scatter-${i}`)
     tooltip.attr('display', null)
-    tt_padding = 10
-    elements = []
-    elements.push(d3.select('#title').text(d.title))
-    elements.push(d3.select('#author').text("by " + d.author + ' (' + d.year_published + ')'))
-    elements.push(d3.select('#date').text(`${format_date(d, true)} — ${format_date(d, false)}`));
-    d3.select('#tooltip-rect-scatter').attr('width', d3.max(elements.map(elt => elt.node().getBBox().width))+tt_padding)
-    d3.select('#tooltip-rect-scatter').attr('x', d3.min(elements.map(elt => elt.node().getBBox().x))-tt_padding/2)
-    if (x - d3.select('#tooltip-rect-scatter').attr('width')/2 < 0) {
-      d3.select('.tooltip-scatter').attr('text-anchor', 'start')
-    } else if (x + d3.select('#tooltip-rect-scatter').attr('width')/2 > svg.attr('width')) {
-      d3.select('.tooltip-scatter').attr('text-anchor', 'end')
-    } else {
-      d3.select('.tooltip-scatter').attr('text-anchor', 'middle')
-    }
-    // need to check this again after potentially updating the text-anchor
-    d3.select('#tooltip-rect-scatter').attr('x', d3.min(elements.map(elt => elt.node().getBBox().x))-tt_padding/2)
-    if (y - d3.select('#tooltip-rect-scatter').attr('height') < 0) {
-      y = y + Number(d3.select('#tooltip-rect-scatter').attr('height')) + r*2+padding
-    }
-    tooltip.attr('transform', `translate(${x},${y})`)
     d3.selectAll('circle')
-      .attr('fill-opacity', i => authors[i] == d.author ? 1 : .1)
+      .attr('fill-opacity', i => visible_check[i] == d_visible_check ? 1 : .1)
     d3.selectAll('.connect')
-      .attr('stroke-opacity', i => authors[i] == d.author ? 1 : .1)
+      .attr('stroke-opacity', i => visible_check[i] == d_visible_check ? 1 : .1)
     d3.selectAll('.year-start')
-      .attr('stroke-opacity', i => authors[i] == d.author ? 1 : .1)
+      .attr('stroke-opacity', i => visible_check[i] == d_visible_check ? 1 : .1)
   };
 
-  function hide_tooltip() {
+  function set_tooltip_text_anchor(i, x) {
+    tooltip = d3.select(`#tooltip-scatter-${i}`)
+    if (x - tooltip.select('rect').attr('width') / 2 < 0) {
+      var anchor = 'start'
+    } else if (x + tooltip.select('rect').attr('width')/2 > svg.attr('width')) {
+      var anchor = 'end'
+    } else {
+      var anchor = 'middle'
+    }
+    return anchor
+  }
+
+  function set_tooltip_width(i) {
+    tooltip = d3.select(`#tooltip-scatter-${i}`)
+    elements = [tooltip.select('#title'), tooltip.select('#author'), tooltip.select('#date')]
+    return d3.max(elements.map(elt => elt.node().getBBox().width))+tt_padding
+  }
+
+  function set_tooltip_x(i) {
+    tooltip = d3.select(`#tooltip-scatter-${i}`)
+    elements = [tooltip.select('#title'), tooltip.select('#author'), tooltip.select('#date')]
+    return d3.min(elements.map(elt => elt.node().getBBox().x))-tt_padding/2
+  }
+
+  function hide_tooltip(i) {
+    tooltip = d3.select(`#tooltip-scatter-${i}`)
     tooltip.attr('display', 'none')
     d3.selectAll('circle')
       .attr('fill-opacity', 1)
@@ -266,10 +274,9 @@ function Scatterplot(data, {
       .attr("y1", i => yScale(Y2[i]) + Y_dodge[i])
       .attr("y2", i => yScale(Y2[i]) + Y_dodge[i])
       .attr("stroke", i => color(Z[i]))
-      .attr('id', i => authors[i])
       .attr('stroke-width', r*2)
-      .on("mouseover", (event, i) => update_tooltip(data[i], xScale(X1[i]), yScale(Y1[i]) + Y_dodge[i]))
-      .on("mouseout", () => hide_tooltip())
+      .on("mouseover", (event, i) => make_tooltip_visible(i, visible_check[i]))
+      .on("mouseout", (event, i) => hide_tooltip(i))
     .clone()
       .attr("class", 'connect')
       .attr('display', null)
@@ -278,8 +285,8 @@ function Scatterplot(data, {
       .attr("x2", i => Y1[i].getTime() == Y2[i].getTime() ? xScale(X2[i]) : xScale(new Date('2015/12/31')))
       .attr("y1", i => yScale(Y1[i]) + Y_dodge[i])
       .attr("y2", i => yScale(Y1[i]) + Y_dodge[i])
-      .on("mouseover", (event, i) => update_tooltip(data[i], xScale(X1[i]), yScale(Y1[i]) + Y_dodge[i]))
-      .on("mouseout", () => hide_tooltip())
+      .on("mouseover", (event, i) => make_tooltip_visible(i, visible_check[i]))
+      .on("mouseout", (event, i) => hide_tooltip(i))
 
   g.selectAll("circle")
     .data(I)
@@ -288,37 +295,50 @@ function Scatterplot(data, {
       .attr("cy", i => yScale(Y1[i]) + Y_dodge[i])
       .attr('fill', i => color(Z[i]))
       .attr("r", r)
-      .on("mouseover", (event, i) => update_tooltip(data[i], xScale(X1[i]), yScale(Y1[i]) + Y_dodge[i]))
-      .on("mouseout", () => hide_tooltip())
+      .on("mouseover", (event, i) => make_tooltip_visible(i, visible_check[i]))
+      .on("mouseout", (event, i) => hide_tooltip(i))
     .clone()
       .attr("cx", i => xScale(X2[i]))
       .attr("cy", i => yScale(Y2[i]) + Y_dodge[i])
-      .on("mouseover", (event, i) => update_tooltip(data[i], xScale(X1[i]), yScale(Y1[i]) + Y_dodge[i]))
-      .on("mouseout", () => hide_tooltip())
+      .on("mouseover", (event, i) => make_tooltip_visible(i, visible_check[i]))
+      .on("mouseout", (event, i) => hide_tooltip(i))
 
-  var tooltip = svg.append('g')
-                   .attr('class', 'tooltip-scatter')
-                   .attr('display', 'none')
-                   .attr('pointer-events', 'none')
-                   .attr('font-family', 'sans-serif')
-                   .attr('font-size', '10')
-                   .attr('text-anchor', 'middle')
+  tooltips = g.selectAll('g')
+              .data(I)
+              .join('g')
+                .attr('class', 'tooltip-scatter')
+                .attr('id', i =>  `tooltip-scatter-${i}`)
+                .attr('pointer-events', 'none')
+                .attr('font-family', 'sans-serif')
+                .attr('font-size', '10')
+                .attr('transform', i => `translate(${xScale(X1[i])}, ${yScale(Y1[i]) + Y_dodge[i] - tt_rect_height < 0 ? yScale(Y1[i]) + Y_dodge[i] + tt_rect_height + r*2+padding : yScale(Y1[i]) + Y_dodge[i]})`)
 
-  tooltip.append('rect')
-         .attr('id', 'tooltip-rect-scatter')
-         .style('fill', 'white')
-         .attr('y', '-50')
-         .attr('height', '45')
-         .style('stroke', 'black')
-  tooltip.append('text')
-         .attr('id', 'title')
-         .attr('y', '-36')
-  tooltip.append('text')
-         .attr('id', 'author')
-         .attr('y', '-24')
-  tooltip.append('text')
-         .attr('id', 'date')
-         .attr('y', '-12')
+  var rects = tooltips.append('rect')
+                      .style('fill', 'white')
+                      .attr('y', '-50')
+                      .attr('height', tt_rect_height)
+                      .style('stroke', 'black')
+
+  tooltips.append('text')
+          .attr('id', 'title')
+          .attr('y', '-36')
+          .text(i => data[i].title)
+  tooltips.append('text')
+          .attr('id', 'author')
+          .attr('y', '-24')
+          .text(i => `by ${data[i].author} (${data[i].year_published})`)
+  tooltips.append('text')
+          .attr('id', 'date')
+          .attr('y', '-12')
+          .text(i => `${format_date(data[i], true)} — ${format_date(data[i], false)}`)
+
+  rects.attr('width', i => set_tooltip_width(i))
+  tooltips.attr('text-anchor', i => set_tooltip_text_anchor(i, xScale(X1[i])))
+  rects.attr('x', i => set_tooltip_x(i))
+
+  // we do this at the end because the text needs to be displayed for the last
+  // bit of code to work (else the text's width is always 0)
+  tooltips.attr('display', 'none')
 
   function update_z() {
     z = get_z('scatter')
