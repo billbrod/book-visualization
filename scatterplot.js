@@ -141,10 +141,9 @@ function Scatterplot(data, {
       .attr("viewBox", [0, 0, width, height])
       .attr("style", "max-width: 100%; height: auto; height: intrinsic;");
 
-  tt_rect_height = 45
   tt_padding = 10
-  function make_tooltip_visible(i, d_visible_check) {
-    tooltip = d3.select(`#tooltip-scatter-${i}`)
+  function make_tooltip_visible(idx, d_visible_check) {
+    tooltip = d3.select(`#tooltip-scatter-${idx}`)
     tooltip.attr('display', null)
     d3.selectAll('circle')
       .attr('fill-opacity', i => visible_check[i] == d_visible_check ? 1 : .1)
@@ -152,10 +151,11 @@ function Scatterplot(data, {
       .attr('stroke-opacity', i => visible_check[i] == d_visible_check ? 1 : .1)
     d3.selectAll('.year-start')
       .attr('stroke-opacity', i => visible_check[i] == d_visible_check ? 1 : .1)
+    d3.selectAll('.mini_tooltip-scatter')
+      .attr('display', i => visible_check[i] == d_visible_check && i != idx ? null : 'none')
   };
 
-  function set_tooltip_text_anchor(i, x) {
-    tooltip = d3.select(`#tooltip-scatter-${i}`)
+  function set_tooltip_text_anchor(tooltip, x) {
     if (x - tooltip.select('rect').attr('width') / 2 < 0) {
       var anchor = 'start'
     } else if (x + tooltip.select('rect').attr('width')/2 > svg.attr('width')) {
@@ -166,21 +166,19 @@ function Scatterplot(data, {
     return anchor
   }
 
-  function set_tooltip_width(i) {
-    tooltip = d3.select(`#tooltip-scatter-${i}`)
-    elements = [tooltip.select('#title'), tooltip.select('#author'), tooltip.select('#date')]
-    return d3.max(elements.map(elt => elt.node().getBBox().width))+tt_padding
+  function set_tooltip_width(tooltip) {
+    elements = tooltip.selectAll('text')
+    return d3.max(elements.nodes().map(elt => elt.getBBox().width))+tt_padding
   }
 
-  function set_tooltip_x(i) {
-    tooltip = d3.select(`#tooltip-scatter-${i}`)
-    elements = [tooltip.select('#title'), tooltip.select('#author'), tooltip.select('#date')]
-    return d3.min(elements.map(elt => elt.node().getBBox().x))-tt_padding/2
+  function set_tooltip_x(tooltip) {
+    elements = tooltip.selectAll('text')
+    return d3.min(elements.nodes().map(elt => elt.getBBox().x))-tt_padding/2
   }
 
   function hide_tooltip(i) {
-    tooltip = d3.select(`#tooltip-scatter-${i}`)
-    tooltip.attr('display', 'none')
+    d3.select(`#tooltip-scatter-${i}`).attr('display', 'none')
+    d3.selectAll(`.mini_tooltip-scatter`).attr('display', 'none')
     d3.selectAll('circle')
       .attr('fill-opacity', 1)
     d3.selectAll('.connect')
@@ -303,6 +301,7 @@ function Scatterplot(data, {
       .on("mouseover", (event, i) => make_tooltip_visible(i, visible_check[i]))
       .on("mouseout", (event, i) => hide_tooltip(i))
 
+  tt_rect_height = 45
   tooltips = g.selectAll('g')
               .data(I)
               .join('g')
@@ -332,13 +331,35 @@ function Scatterplot(data, {
           .attr('y', '-12')
           .text(i => `${format_date(data[i], true)} — ${format_date(data[i], false)}`)
 
-  rects.attr('width', i => set_tooltip_width(i))
-  tooltips.attr('text-anchor', i => set_tooltip_text_anchor(i, xScale(X1[i])))
-  rects.attr('x', i => set_tooltip_x(i))
+  rects.attr('width', i => set_tooltip_width(d3.select(`#tooltip-scatter-${i}`)))
+  tooltips.attr('text-anchor', i => set_tooltip_text_anchor(d3.select(`#tooltip-scatter-${i}`), xScale(X1[i])))
+  rects.attr('x', i => set_tooltip_x(d3.select(`#tooltip-scatter-${i}`)))
+
+  mini_tt_rect_height = 20
+  mini_tooltips = tooltips.clone()
+                .attr('class', 'mini_tooltip-scatter')
+                .attr('id', i =>  `mini_tooltip-scatter-${i}`)
+                .attr('transform', i => `translate(${xScale(X1[i])}, ${yScale(Y1[i]) + Y_dodge[i] - mini_tt_rect_height < 0 ? yScale(Y1[i]) + Y_dodge[i] + mini_tt_rect_height + r*2+padding : yScale(Y1[i]) + Y_dodge[i]})`)
+
+  var mini_rects = mini_tooltips.append('rect')
+                      .style('fill', 'white')
+                      .style('stroke', 'black')
+                      .attr('y', '-26')
+                      .attr('height', mini_tt_rect_height)
+
+  mini_tooltips.append('text')
+          .attr('y', '-12')
+          .attr('id', 'title')
+          .text(i => data[i].title)
+
+  mini_rects.attr('width', i => set_tooltip_width(d3.select(`#mini_tooltip-scatter-${i}`)))
+  mini_tooltips.attr('text-anchor', i => set_tooltip_text_anchor(d3.select(`#mini_tooltip-scatter-${i}`), xScale(X1[i])))
+  mini_rects.attr('x', i => set_tooltip_x(d3.select(`#mini_tooltip-scatter-${i}`)))
 
   // we do this at the end because the text needs to be displayed for the last
   // bit of code to work (else the text's width is always 0)
   tooltips.attr('display', 'none')
+  mini_tooltips.attr('display', 'none')
 
   function update_z() {
     z = get_z('scatter')
