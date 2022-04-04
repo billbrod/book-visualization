@@ -310,7 +310,7 @@ function Scatterplot(data, {
                 .attr('pointer-events', 'none')
                 .attr('font-family', 'sans-serif')
                 .attr('font-size', '10')
-                .attr('transform', i => `translate(${xScale(X1[i])}, ${yScale(Y1[i]) + Y_dodge[i] - tt_rect_height < 0 ? yScale(Y1[i]) + Y_dodge[i] + tt_rect_height + r*2+padding : yScale(Y1[i]) + Y_dodge[i]})`)
+                .attr('transform', i => `translate(${xScale(X1[i])}, ${yScale(Y1[i]) + Y_dodge[i] - tt_rect_height <= 0 ? yScale(Y1[i]) + Y_dodge[i] + tt_rect_height + r*2+padding : yScale(Y1[i]) + Y_dodge[i]})`)
 
   var rects = tooltips.append('rect')
                       .style('fill', 'white')
@@ -339,7 +339,7 @@ function Scatterplot(data, {
   mini_tooltips = tooltips.clone()
                 .attr('class', 'mini_tooltip-scatter')
                 .attr('id', i =>  `mini_tooltip-scatter-${i}`)
-                .attr('transform', i => `translate(${xScale(X1[i])}, ${yScale(Y1[i]) + Y_dodge[i] - mini_tt_rect_height < 0 ? yScale(Y1[i]) + Y_dodge[i] + mini_tt_rect_height + r*2+padding : yScale(Y1[i]) + Y_dodge[i]})`)
+                .attr('transform', i => `translate(${xScale(X1[i])}, ${yScale(Y1[i]) + Y_dodge[i] - mini_tt_rect_height <= 0 ? yScale(Y1[i]) + Y_dodge[i] + mini_tt_rect_height + r*2+padding : yScale(Y1[i]) + Y_dodge[i]})`)
 
   var mini_rects = mini_tooltips.append('rect')
                       .style('fill', 'white')
