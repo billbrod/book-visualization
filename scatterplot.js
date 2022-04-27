@@ -81,35 +81,6 @@ function format_date(d, begin) {
   return d3.timeFormat('%b %-d')(dateparse(date))
 }
 
-// from https://gist.github.com/Daniel-Hug/d7984d82b58d6d2679a087d896ca3d2b
-function overlap(a, b) {
-  // no horizontal overlap
-  if (a.x1 >= b.x2 || b.x1 >= a.x2) return false;
-  // no vertical overlap
-  if (a.y1 >= b.y2 || b.y1 >= a.y2) return false;
-  return true;
-}
-
-// adapted from https://github.com/mwkling/rectangle-overlap/blob/master/strategies/separation.py
-function translate_vector(idx, bboxes) {
-  bbox = bboxes[idx]
-  ctr_vecs = bboxes.map(bb => [bbox.midx-bb.midx, bbox.midy-bb.midy])
-  ctr_vecs = ctr_vecs.filter((bb, i) => i!=idx && overlap(bboxes[i], bbox))
-  ctr_vecs = ctr_vecs.concat([0, 0])
-  ctr_vecs = [d3.sum(ctr_vecs.map(bb => bb[0])), d3.sum(ctr_vecs.map(bb => bb[1]))]
-  mag = Math.sqrt(ctr_vecs[0]**2 + ctr_vecs[1]**2)
-  return ctr_vecs.map(c => c/mag)
-}
-
-// adapted from https://github.com/mwkling/rectangle-overlap/blob/master/strategies/separation.py
-function separate_rects(bboxes, tvals) {
-  // turn bboxes into rectangles
-  bboxes = bboxes.map((bb, i) => ({'x1': bb.x+tvals[i][0], 'y1': bb.y+tvals[i][1],
-                                   'x2': bb.x+bb.width+tvals[i][0], 'y2': bb.y+bb.height+tvals[i][1],
-                                   'midx': bb.x+tvals[i][0]+bb.width/2, 'midy': bb.y+tvals[i][1]+bb.height/2}))
-  return bboxes.map((bb, i) => translate_vector(i, bboxes))
-}
-
 function Scatterplot(data, {
   x1 = ([x]) => x1, // given d in data, returns the (quantitative) x-value
   x2 = ([x]) => x2, // given d in data, returns the (quantitative) x-value
@@ -385,54 +356,16 @@ function Scatterplot(data, {
   mini_tooltips.attr('text-anchor', i => set_tooltip_text_anchor(d3.select(`#mini_tooltip-scatter-${i}`), xScale(X1[i])))
   mini_rects.attr('x', i => set_tooltip_x(d3.select(`#mini_tooltip-scatter-${i}`)))
 
-  var offsets, original_translate, translate_values, mini_bboxes
-  idx = 0
-  indices_flat = [0]
+  // get the translation and bboxes for each of the mini tooltips (which gives
+  // the location)
+  translate_regex = /translate\(([\d.]+), ?([\d.]+)\)/
+  original_translate = d3.map(mini_tooltips, t => translate_regex.exec(t.attributes.transform.textContent).slice(1).map(d => Number(d)))
+  // need to use this instead of the actual bbox, since that can't be cloned and
+  // sent to the worker.
+  mini_bboxes = d3.map(mini_rects, (r, i) => new Object({'width': r.getBBox().width, 'height': r.getBBox().height, 'x': r.getBBox().x, 'y': r.getBBox().y}))
 
-  while (indices_flat.length > 0) {
-    // get the bboxes for each of the mini tooltips
-    mini_bboxes = d3.map(mini_rects, r => r.getBBox())
-    // shift mini rects so they don't overlap
-    translate_regex = /translate\(([\d.]+), ?([\d.]+)\)/
-    original_translate = d3.map(mini_tooltips, t => translate_regex.exec(t.attributes.transform.textContent).slice(1).map(d => Number(d)))
-    // get an array of arrays, each of which contains all tooltips corresponding to a given author
-    mini_bboxes = mini_bboxes.map((r, i) => mini_bboxes.map((t, j) => visible_check[i] == visible_check[j] ? [j, t] : null).filter(r => r != null))
-    // get the first array of bboxes corresponding to each author
-    unique_checks = Array(...new Set(visible_check))
-    mini_bboxes = unique_checks.map(i => mini_bboxes[unique_checks.indexOf(i)])
-    // get bboxes for authors with more than one book
-    mini_bboxes = mini_bboxes.filter(r => r.length > 1)
-    // separate out the bboxes and indices
-    mini_bbox_indices = mini_bboxes.map(r => r.map(r_ => r_[0]))
-    translate_values = mini_bbox_indices.map(idx => idx.map(i => original_translate[i]))
-    mini_bboxes = mini_bboxes.map(r => r.map(r_ => r_[1]))
-    offsets = mini_bboxes.map((r, i) => separate_rects(r, translate_values[i]))
-    // grab only those translate values that are non-nans
-    mini_bbox_indices = mini_bbox_indices.map((o, i) => o.filter((o_, j) => !(Number.isNaN(offsets[i][j][0]))))
-    translate_values = translate_values.map((o, i) => o.filter((o_, j) => !(Number.isNaN(offsets[i][j][0]))))
-    offsets = offsets.map(o => o.filter(o_ => !(Number.isNaN(o_[0]))))
-    mini_bbox_indices = mini_bbox_indices.filter(o => o.length > 0)
-    translate_values = translate_values.filter(o => o.length > 0)
-    offsets = offsets.filter(o => o.length > 0)
-    // for any non nan offsets, adjust translate by that amount
-    indices_flat = mini_bbox_indices.flat()
-    translate_flat = translate_values.flat()
-    offsets_flat = offsets.flat()
-
-    function update_transform(i) {
-      t = original_translate[i]
-      if (indices_flat.indexOf(i) > -1) {
-        j = indices_flat.indexOf(i)
-        t[0] += offsets_flat[j][0]
-        t[1] += offsets_flat[j][1]
-      }
-      return `translate(${t[0]}, ${t[1]})`
-    }
-    mini_tooltips.attr('transform', update_transform)
-  }
-
-  // we do this at the end because the text needs to be displayed for the last
-  // bit of code to work (else the text's width is always 0)
+  // we do this here because the text needs to be displayed in order to
+  // correctly grab widths (else the text's width is always 0)
   tooltips.attr('display', 'none')
   mini_tooltips.attr('display', 'none')
 
@@ -456,6 +389,12 @@ function Scatterplot(data, {
   d3.select('#scatter_z_select')
     .on('change', () => update_z())
 
+  // goal of this function is to shift mini rects so they don't overlap. we use a worker so it happens in the background, after load
+  rectWorker = new Worker('shift_rects.js');
+  rectWorker.postMessage([visible_check, original_translate, mini_bboxes]);
+  rectWorker.onmessage = function(e) {
+    mini_tooltips.attr('transform', (r, i) => `translate(${e.data[i][0]}, ${e.data[i][1]})`)
+  }
 
   return svg.node();
 }
