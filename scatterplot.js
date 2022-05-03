@@ -289,6 +289,7 @@ function Scatterplot(data, {
   g.selectAll("circle")
     .data(I)
     .join("circle")
+      .attr('class', 'first-circle')
       .attr("cx", i => xScale(X1[i]))
       .attr("cy", i => yScale(Y1[i]) + Y_dodge[i])
       .attr('fill', i => color(Z[i]))
@@ -296,6 +297,7 @@ function Scatterplot(data, {
       .on("mouseover", (event, i) => make_tooltip_visible(i, visible_check[i]))
       .on("mouseout", (event, i) => hide_tooltip(i))
     .clone()
+      .attr('class', 'second-circle')
       .attr("cx", i => xScale(X2[i]))
       .attr("cy", i => yScale(Y2[i]) + Y_dodge[i])
       .on("mouseover", (event, i) => make_tooltip_visible(i, visible_check[i]))
@@ -356,13 +358,17 @@ function Scatterplot(data, {
   mini_tooltips.attr('text-anchor', i => set_tooltip_text_anchor(d3.select(`#mini_tooltip-scatter-${i}`), xScale(X1[i])))
   mini_rects.attr('x', i => set_tooltip_x(d3.select(`#mini_tooltip-scatter-${i}`)))
 
-  // get the translation and bboxes for each of the mini tooltips (which gives
-  // the location)
+  // get the translation (which gives the location) and bboxes for each of the mini tooltips
   translate_regex = /translate\(([\d.]+), ?([\d.]+)\)/
-  original_translate = d3.map(mini_tooltips, t => translate_regex.exec(t.attributes.transform.textContent).slice(1).map(d => Number(d)))
+  mini_translate = d3.map(mini_tooltips, t => translate_regex.exec(t.attributes.transform.textContent).slice(1).map(d => Number(d)))
+  full_translate = d3.map(tooltips, t => translate_regex.exec(t.attributes.transform.textContent).slice(1).map(d => Number(d)))
   // need to use this instead of the actual bbox, since that can't be cloned and
   // sent to the worker.
   mini_bboxes = d3.map(mini_rects, (r, i) => new Object({'width': r.getBBox().width, 'height': r.getBBox().height, 'x': r.getBBox().x, 'y': r.getBBox().y}))
+  full_bboxes = d3.map(rects, (r, i) => new Object({'width': r.getBBox().width, 'height': r.getBBox().height, 'x': r.getBBox().x, 'y': r.getBBox().y}))
+  first_circle_bboxes = d3.map(d3.selectAll('.first-circle'), (r, i) => new Object({'width': r.getBBox().width, 'height': r.getBBox().height, 'x': r.getBBox().x, 'y': r.getBBox().y}))
+  // translate is unnecessary for the circles -- their bboxes contain all the necessary info
+  first_circle_translate = d3.map(first_circle_bboxes, c => [0, 0])
 
   // we do this here because the text needs to be displayed in order to
   // correctly grab widths (else the text's width is always 0)
@@ -391,12 +397,13 @@ function Scatterplot(data, {
 
   // goal of this function is to shift mini rects so they don't overlap. we use a worker so it happens in the background, after load
   rectWorker = new Worker('shift_rects.js');
-  rectWorker.postMessage([visible_check, original_translate, mini_bboxes]);
+  rectWorker.postMessage([visible_check, mini_translate, mini_bboxes, first_circle_translate, first_circle_bboxes]);
   rectWorker.onmessage = function(e) {
     mini_tooltips.attr('transform', (r, i) => `translate(${e.data[i][0]}, ${e.data[i][1]})`)
   }
 
   return svg.node();
+
 }
 // Copyright 2021, Observable Inc.
 // Released under the ISC license.
