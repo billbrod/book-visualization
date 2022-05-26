@@ -11,10 +11,24 @@ function textSize(text) {
     return { width: size.width, height: size.height };
 }
 
+function pages_per_day(d) {
+    started = d.map(di => dateparse(di.date_started))
+    read = d.map(di => dateparse(di.date_read))
+    // difference between two dates gives the difference in msecs, so convert it
+    // to days (and round, to account for precision issues). we add 1 because
+    // e.g., if I finished a book the day I read it, I read it in one day.
+    num_days = started.map((di, i) => 1 + Math.round((read[i] - di)) / (1000 * 60 * 60 * 24))
+    pg_per_day = d.map((di, i) => di.number_of_pages / num_days[i])
+    avg_pg_per_day = d3.mean(pg_per_day)
+    return avg_pg_per_day
+}
+
 function get_y() {
     y_name = d3.select("#bar_y_select").property('value')
     if (y_name === 'pages') {
         return d => d3.sum(d.map(di => di.number_of_pages))
+    } else if (y_name === 'pages_per_day') {
+        return d => pages_per_day(d)
     } else if (y_name === 'books') {
         return d => d.length
     }
@@ -135,7 +149,11 @@ function GroupedBarChart(data, {
         tt_padding = 10
         elements = []
         elements.push(d3.select('#type').text(d[1]))
-        elements.push(d3.select('#value').text(d[2]))
+        if (Number.isInteger(d[2])) {
+            elements.push(d3.select('#value').text(d[2]))
+        } else {
+            elements.push(d3.select('#value').text(d[2].toFixed(2)))
+        }
         d3.select('#tooltip-rect-bar').attr('width', d3.max(elements.map(elt => elt.node().getBBox().width))+tt_padding)
         d3.select('#tooltip-rect-bar').attr('x', d3.min(elements.map(elt => elt.node().getBBox().x))-tt_padding/2)
         if (x + Number(d3.select('#tooltip-rect-bar').attr('width')) + marginLeft > Number(svg.attr('width'))) {
@@ -146,8 +164,12 @@ function GroupedBarChart(data, {
         // need to check this again after potentially updating the text-anchor
         d3.select('#tooltip-rect-bar').attr('x', d3.min(elements.map(elt => elt.node().getBBox().x))-tt_padding/2)
         if (y - d3.select('#tooltip-rect-bar').attr('height') < 0) {
-            y = y + Number(d3.select('#tooltip-rect-bar').attr('height')) + r*2+padding
+            y = y + Number(d3.select('#tooltip-rect-bar').attr('height'))
+            // just so we're not directly on top fo the bar
+            x = x + Number(d3.select('#tooltip-rect-bar').attr('height')) / 3
         }
+        // we may have updated y, s run this again
+        tooltip.attr('transform', `translate(${x},${y})`)
         d3.selectAll('.bar')
           .attr('fill-opacity', (i, j) => (grouped_data[Math.floor(j/I.length)][0].getTime() == d[0].getTime() && grouped_data[Math.floor(j/I.length)][1][i] && grouped_data[Math.floor(j/I.length)][1][i][1]) == d[1] ? 1 : .1)
         d3.selectAll('circle')
