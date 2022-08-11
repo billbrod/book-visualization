@@ -30,7 +30,7 @@ function get_z(z_name) {
   }
   if (z_name === 'ownership') {
     function z(d) {
-      if (['Henry', 'Maija', 'Joseph', 'Natalie'].indexOf(d.ownership) != -1) return 'friend'
+      if (['Henry', 'Maija', 'Joseph', 'Natalie', 'Rob'].indexOf(d.ownership) != -1) return 'friend'
       return d.ownership
     }
   } else if (z_name === 'fiction') {
