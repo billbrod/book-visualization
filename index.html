@@ -102,7 +102,7 @@
      // connect tooltips for two: when you highlight bar plot, highlight relevant points and vice versa
      // add brush to select points and then update barplot?
      // add some way to mark favorites?
-     d3.csv("books.csv")
+     d3.csv("https://raw.githubusercontent.com/billbrod/book-tracking/main/books.csv")
                    .then(function(books) {
                        // want to have books go from oldest to most recent
                        books = books.sort((x, y) => dateparse(x.date_started).getTime() - dateparse(y.date_started).getTime())
