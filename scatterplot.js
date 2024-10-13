@@ -64,8 +64,8 @@ function get_colormap(data, plot_type) {
     var colors = d3.schemePaired.slice(0, 2).concat([d3.schemePaired[3], d3.schemePaired[8]])
     order = ['paperback', 'hardback', 'ebook', 'print-on-demand']
   } else if (z_name === 'rating') {
-    var colors = d3.schemeOrRd[5]
-    order = ["1", "2", "3", "4", "5"]
+    var colors = d3.schemeOrRd[9]
+    order = ["1.0", "1.5", "2.0", "2.5", "3.0", "3.5", "4.0", "4.5", "5.0"]
   }
   if (color === undefined) color = d3.scaleOrdinal(order, colors);
   return [color, order]
